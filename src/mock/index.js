@@ -3,7 +3,7 @@ import { mockUsers, mockTags, mockArticles, mockComments, mockJwt } from './data
 // 是否启用 mock 模式
 // 开发环境默认启用，生产环境需要手动设置为 false
 // 如果需要连接真实后端，将此值改为 false
-const USE_MOCK = true
+const USE_MOCK = false
 
 // 模拟延迟
 const delay = (ms = 500) => new Promise((resolve) => setTimeout(resolve, ms))

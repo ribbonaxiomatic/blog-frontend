@@ -35,12 +35,41 @@
               </div>
             </article>
 
-            <div v-if="total > pageSize" class="pagination">
-              <button @click="prevPage" :disabled="currentPage === 1">上一页</button>
-              <span>第 {{ currentPage }} 页，共 {{ Math.ceil(total / pageSize) }} 页</span>
-              <button @click="nextPage" :disabled="currentPage >= Math.ceil(total / pageSize)">
-                下一页
-              </button>
+            <div v-if="total > 0" class="pagination">
+              <div class="pagination-info">
+                <span>共 {{ total }} 条，每页 {{ pageSize }} 条</span>
+              </div>
+              <div class="pagination-controls">
+                <button @click="goToPage(1)" :disabled="currentPage === 1" class="page-btn">首页</button>
+                <button @click="prevPage" :disabled="currentPage === 1" class="page-btn">上一页</button>
+                
+                <div class="page-numbers">
+                  <button
+                    v-for="page in visiblePages"
+                    :key="page"
+                    @click="goToPage(page)"
+                    :class="['page-number', { active: page === currentPage }]"
+                  >
+                    {{ page }}
+                  </button>
+                </div>
+                
+                <button @click="nextPage" :disabled="currentPage >= totalPages" class="page-btn">下一页</button>
+                <button @click="goToPage(totalPages)" :disabled="currentPage >= totalPages" class="page-btn">末页</button>
+              </div>
+              <div class="pagination-jump">
+                <span>跳转到</span>
+                <input
+                  v-model.number="jumpPage"
+                  type="number"
+                  :min="1"
+                  :max="totalPages"
+                  @keyup.enter="handleJumpPage"
+                  class="jump-input"
+                />
+                <span>页</span>
+                <button @click="handleJumpPage" class="jump-btn">确定</button>
+              </div>
             </div>
           </div>
         </div>
@@ -50,7 +79,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getArticleList } from '@/api/article'
 import Layout from '@/components/Layout.vue'
@@ -63,6 +92,34 @@ const searchQuery = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+const jumpPage = ref(1)
+
+// 计算总页数
+const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
+
+// 计算可见的页码列表
+const visiblePages = computed(() => {
+  const pages = []
+  const maxVisible = 7 // 最多显示7个页码
+  let start = 1
+  let end = totalPages.value
+
+  if (totalPages.value > maxVisible) {
+    const half = Math.floor(maxVisible / 2)
+    start = Math.max(1, currentPage.value - half)
+    end = Math.min(totalPages.value, start + maxVisible - 1)
+    
+    // 如果接近末尾，调整起始位置
+    if (end - start < maxVisible - 1) {
+      start = Math.max(1, end - maxVisible + 1)
+    }
+  }
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+  return pages
+})
 
 const loadArticles = async () => {
   loading.value = true
@@ -80,6 +137,8 @@ const loadArticles = async () => {
     if (res.code === 1) {
       articles.value = res.data.rows || []
       total.value = res.data.total || 0
+      // 同步跳转页码
+      jumpPage.value = currentPage.value
     }
   } catch (error) {
     console.error('加载文章失败:', error)
@@ -90,6 +149,7 @@ const loadArticles = async () => {
 
 const handleSearch = () => {
   currentPage.value = 1
+  jumpPage.value = 1
   loadArticles()
 }
 
@@ -102,10 +162,29 @@ const prevPage = () => {
 }
 
 const nextPage = () => {
-  if (currentPage.value < Math.ceil(total.value / pageSize.value)) {
+  if (currentPage.value < totalPages.value) {
     currentPage.value++
     loadArticles()
     window.scrollTo(0, 0)
+  }
+}
+
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value && page !== currentPage.value) {
+    currentPage.value = page
+    jumpPage.value = page
+    loadArticles()
+    window.scrollTo(0, 0)
+  }
+}
+
+const handleJumpPage = () => {
+  const page = Number(jumpPage.value)
+  if (page >= 1 && page <= totalPages.value) {
+    goToPage(page)
+  } else {
+    jumpPage.value = currentPage.value
+    alert(`请输入 1 到 ${totalPages.value} 之间的页码`)
   }
 }
 
@@ -250,29 +329,120 @@ onMounted(() => {
 }
 
 .pagination {
+  margin-top: 30px;
+  padding: 30px 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pagination-info {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #666;
+  font-size: 14px;
+}
+
+.pagination-controls {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 20px;
-  margin-top: 30px;
-  padding: 20px;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
 }
 
-.pagination button {
+.page-btn {
   padding: 8px 16px;
   background: #409eff;
   color: #fff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
 }
 
-.pagination button:disabled {
+.page-btn:disabled {
   background: #c0c4cc;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
-.pagination button:hover:not(:disabled) {
+.page-btn:hover:not(:disabled) {
+  background: #66b1ff;
+  transform: translateY(-1px);
+}
+
+.page-numbers {
+  display: flex;
+  gap: 5px;
+  margin: 0 10px;
+}
+
+.page-number {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 12px;
+  background: #fff;
+  color: #606266;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-number:hover {
+  color: #409eff;
+  border-color: #409eff;
+}
+
+.page-number.active {
+  background: #409eff;
+  color: #fff;
+  border-color: #409eff;
+  font-weight: 600;
+}
+
+.pagination-jump {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #606266;
+}
+
+.jump-input {
+  width: 60px;
+  padding: 6px 8px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.jump-input:focus {
+  outline: none;
+  border-color: #409eff;
+}
+
+.jump-btn {
+  padding: 6px 16px;
+  background: #409eff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.jump-btn:hover {
   background: #66b1ff;
 }
 </style>
