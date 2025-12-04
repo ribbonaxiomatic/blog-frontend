@@ -7,7 +7,17 @@
           <h1 class="title">{{ article.title }}</h1>
           <div class="meta">
             <span class="tag">{{ article.tagName }}</span>
-            <span class="author">作者: {{ authorName || `用户 ${article.userId}` }}</span>
+            <div class="author-info">
+              <router-link :to="`/profile/${article.userId}`" class="author-link">
+                <img
+                  :src="authorInfo.avatar"
+                  :alt="authorName || `用户 ${article.userId}`"
+                  class="author-avatar"
+                  @error="handleAvatarError"
+                />
+                <span class="author">作者: {{ authorName || `用户 ${article.userId}` }}</span>
+              </router-link>
+            </div>
             <span class="date">{{ formatDate(article.publishedAt || article.createdAt) }}</span>
             <span class="views">阅读 {{ article.viewCount || 0 }}</span>
           </div>
@@ -105,6 +115,7 @@ const commentTotal = ref(0)
 const isLiked = ref(false)
 const isFavorited = ref(false)
 const authorName = ref('')
+const authorInfo = ref({}) // 保存作者完整信息
 const commentUserNames = ref({}) // 缓存评论用户的userName
 
 const loadArticle = async () => {
@@ -132,12 +143,20 @@ const loadAuthorInfo = async (userId) => {
   try {
     const res = await getUserById(userId)
     if (res.code === 1 && res.data) {
+      authorInfo.value = res.data
       authorName.value = res.data.userName || `用户 ${userId}`
     }
   } catch (error) {
     console.warn('加载作者信息失败:', error)
     authorName.value = `用户 ${userId}`
+    authorInfo.value = {}
   }
+}
+
+// 处理头像加载错误
+const handleAvatarError = (event) => {
+  // 如果头像加载失败，使用默认头像或隐藏
+  event.target.src = '/default-avatar.png'
 }
 
 const loadComments = async () => {
@@ -308,6 +327,44 @@ onMounted(() => {
   border-bottom: 1px solid #eee;
   font-size: 14px;
   color: #999;
+  flex-wrap: wrap;
+}
+
+.author-info {
+  display: flex;
+  align-items: center;
+}
+
+.author-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.3s;
+}
+
+.author-link:hover {
+  opacity: 0.8;
+}
+
+.author-link:hover .author {
+  color: #409eff;
+}
+
+.author-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #eee;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.author-link:hover .author-avatar {
+  border-color: #409eff;
+  transform: scale(1.1);
 }
 
 .tag {

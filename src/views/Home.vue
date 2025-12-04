@@ -27,7 +27,7 @@
                 <p class="summary">{{ article.summary || article.content?.substring(0, 100) }}</p>
                 <div class="meta">
                   <span class="tag">{{ article.tagName }}</span>
-                  <span class="author">作者: {{ article.userId }}</span>
+                  <span class="author">作者: {{ getUserName(article.userId) }}</span>
                   <span class="date">{{ formatDate(article.publishedAt || article.createdAt) }}</span>
                   <span class="views">阅读 {{ article.viewCount || 0 }}</span>
                   <span class="likes">点赞 {{ article.likeCount || 0 }}</span>
@@ -82,6 +82,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getArticleList } from '@/api/article'
+import { getUserById } from '@/api/user'
 import Layout from '@/components/Layout.vue'
 
 const router = useRouter()
@@ -93,6 +94,7 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
 const jumpPage = ref(1)
+const userNames = ref({}) // 缓存用户ID到用户名的映射
 
 // 计算总页数
 const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
@@ -139,6 +141,8 @@ const loadArticles = async () => {
       total.value = res.data.total || 0
       // 同步跳转页码
       jumpPage.value = currentPage.value
+      // 加载所有文章的作者信息
+      loadAuthorNames(articles.value)
     }
   } catch (error) {
     console.error('加载文章失败:', error)
@@ -195,6 +199,37 @@ const goToDetail = (id) => {
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
   return dateStr.split(' ')[0]
+}
+
+// 加载作者用户名
+const loadAuthorNames = async (articlesList) => {
+  // 获取所有唯一的 userId
+  const userIds = [...new Set(articlesList.map(article => article.userId).filter(Boolean))]
+  
+  // 为每个 userId 加载用户信息（如果还没有缓存）
+  const promises = userIds
+    .filter(userId => !userNames.value[userId]) // 只加载未缓存的
+    .map(async (userId) => {
+      try {
+        const res = await getUserById(userId)
+        if (res.code === 1 && res.data) {
+          userNames.value[userId] = res.data.userName || `用户 ${userId}`
+        } else {
+          userNames.value[userId] = `用户 ${userId}`
+        }
+      } catch (error) {
+        console.warn(`加载用户 ${userId} 信息失败:`, error)
+        userNames.value[userId] = `用户 ${userId}`
+      }
+    })
+  
+  await Promise.all(promises)
+}
+
+// 获取用户名
+const getUserName = (userId) => {
+  if (!userId) return '未知用户'
+  return userNames.value[userId] || `用户 ${userId}`
 }
 
 onMounted(() => {
