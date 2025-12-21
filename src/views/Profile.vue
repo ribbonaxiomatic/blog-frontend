@@ -509,8 +509,9 @@ const uploadAvatarFile = async (file) => {
   uploadingAvatar.value = true
   try {
     const res = await uploadImage(file)
-    if (res.code === 1 && res.data?.url) {
-      const avatarUrl = res.data.url
+
+    if (res.code === 1 && res.data) {
+      const avatarUrl = typeof res.data === 'string' ? res.data : res.data.url || res.data
       // 更新用户信息
       const updateRes = await updateUser({
         userId: user.value.userId,
@@ -531,7 +532,9 @@ const uploadAvatarFile = async (file) => {
     }
   } catch (error) {
     console.error('上传头像失败:', error)
-    alert('上传头像失败，请重试')
+    // 显示更详细的错误信息
+    const errorMsg = error.message || error.response?.data?.msg || '上传头像失败，请重试'
+    alert(errorMsg)
   } finally {
     uploadingAvatar.value = false
   }
