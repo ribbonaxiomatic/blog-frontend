@@ -5,7 +5,21 @@
         <div v-if="loading" class="loading">加载中...</div>
         <div v-else-if="user" class="profile">
           <div class="profile-header">
-            <img :src="user.avatar" alt="avatar" class="avatar" />
+            <div class="avatar-container">
+              <img :src="user.avatar || '/default-avatar.png'" alt="avatar" class="avatar" @error="handleAvatarError" />
+              <div v-if="isOwnProfile" class="avatar-overlay">
+                <input
+                  ref="avatarInput"
+                  type="file"
+                  accept="image/*"
+                  @change="handleAvatarSelect"
+                  class="avatar-input"
+                />
+                <button @click="triggerAvatarUpload" class="avatar-upload-btn" title="更换头像">
+                  📷
+                </button>
+              </div>
+            </div>
             <div class="user-info">
               <h2>{{ user.userName }}</h2>
               <p class="email">{{ user.email }}</p>
@@ -126,6 +140,30 @@
             <h3>编辑资料</h3>
             <form @submit.prevent="handleUpdateProfile">
               <div class="form-group">
+                <label>头像</label>
+                <div class="avatar-upload-section">
+                  <img
+                    :src="editForm.avatar || user.avatar || '/default-avatar.png'"
+                    alt="avatar preview"
+                    class="avatar-preview"
+                    @error="handleAvatarError"
+                  />
+                  <div class="avatar-upload-controls">
+                    <input
+                      ref="editAvatarInput"
+                      type="file"
+                      accept="image/*"
+                      @change="handleEditAvatarSelect"
+                      class="avatar-input"
+                    />
+                    <button type="button" @click="triggerEditAvatarUpload" class="upload-avatar-btn">
+                      选择图片
+                    </button>
+                    <span v-if="uploadingAvatar" class="upload-status">上传中...</span>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
                 <label>用户名</label>
                 <input v-model="editForm.userName" type="text" required />
               </div>
@@ -206,6 +244,7 @@ import { useUserStore } from '@/stores/user'
 import { getUserById, updateUser, updatePassword } from '@/api/user'
 import { getArticleList, deleteArticles } from '@/api/article'
 import { getFollowerList, getFollowingList, toggleFollow } from '@/api/follow'
+import { uploadImage } from '@/api/upload'
 import Layout from '@/components/Layout.vue'
 
 const route = useRoute()
@@ -224,12 +263,16 @@ const userArticles = ref([])
 const followers = ref([])
 const following = ref([])
 const isFollowing = ref(false)
+const uploadingAvatar = ref(false)
+const avatarInput = ref(null)
+const editAvatarInput = ref(null)
 
 const editForm = ref({
   userName: '',
   signature: '',
   gender: 0,
   birthday: '',
+  avatar: '',
 })
 
 const passwordForm = ref({
@@ -249,6 +292,7 @@ const loadUser = async () => {
         signature: res.data.signature || '',
         gender: res.data.gender || 0,
         birthday: res.data.birthday || '',
+        avatar: res.data.avatar || '',
       }
     }
   } catch (error) {
@@ -398,6 +442,109 @@ const unfollowUser = async (targetUserId) => {
   }
 }
 
+// 触发头像上传（主页头像）
+const triggerAvatarUpload = () => {
+  avatarInput.value?.click()
+}
+
+// 处理主页头像选择
+const handleAvatarSelect = async (event) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  // 验证文件类型
+  if (!file.type.startsWith('image/')) {
+    alert('请选择图片文件')
+    return
+  }
+
+  // 验证文件大小（限制为 5MB）
+  if (file.size > 5 * 1024 * 1024) {
+    alert('图片大小不能超过 5MB')
+    return
+  }
+
+  await uploadAvatarFile(file)
+  // 清空 input，以便可以重复选择同一文件
+  event.target.value = ''
+}
+
+// 触发编辑模态框中的头像上传
+const triggerEditAvatarUpload = () => {
+  editAvatarInput.value?.click()
+}
+
+// 处理编辑模态框中的头像选择
+const handleEditAvatarSelect = async (event) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  // 验证文件类型
+  if (!file.type.startsWith('image/')) {
+    alert('请选择图片文件')
+    return
+  }
+
+  // 验证文件大小（限制为 5MB）
+  if (file.size > 5 * 1024 * 1024) {
+    alert('图片大小不能超过 5MB')
+    return
+  }
+
+  // 先预览
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    editForm.value.avatar = e.target.result
+  }
+  reader.readAsDataURL(file)
+
+  // 上传文件
+  await uploadAvatarFile(file)
+  // 清空 input，以便可以重复选择同一文件
+  event.target.value = ''
+}
+
+// 上传头像文件
+const uploadAvatarFile = async (file) => {
+  uploadingAvatar.value = true
+  try {
+    const res = await uploadImage(file)
+
+    if (res.code === 1 && res.data) {
+      const avatarUrl = typeof res.data === 'string' ? res.data : res.data.url || res.data
+      // 更新用户信息
+      const updateRes = await updateUser({
+        userId: user.value.userId,
+        avatar: avatarUrl,
+      })
+      if (updateRes.code === 1) {
+        // 更新本地数据
+        user.value.avatar = avatarUrl
+        editForm.value.avatar = avatarUrl
+        // 如果是自己的资料，更新 store
+        if (isOwnProfile.value) {
+          userStore.updateUserInfo({ ...user.value, avatar: avatarUrl })
+        }
+        alert('头像更新成功')
+      }
+    } else {
+      alert('头像上传失败，请重试')
+    }
+  } catch (error) {
+    console.error('上传头像失败:', error)
+    // 显示更详细的错误信息
+    const errorMsg = error.message || error.response?.data?.msg || '上传头像失败，请重试'
+    alert(errorMsg)
+  } finally {
+    uploadingAvatar.value = false
+  }
+}
+
+// 处理头像加载错误
+const handleAvatarError = (event) => {
+  event.target.src = '/default-avatar.png'
+}
+
 const handleUpdateProfile = async () => {
   try {
     const res = await updateUser({
@@ -406,6 +553,7 @@ const handleUpdateProfile = async () => {
       signature: editForm.value.signature,
       gender: editForm.value.gender,
       birthday: editForm.value.birthday,
+      avatar: editForm.value.avatar || user.value.avatar,
     })
     if (res.code === 1) {
       await loadUser()
@@ -519,11 +667,60 @@ watch(activeTab, (newTab) => {
   margin-bottom: 30px;
 }
 
+.avatar-container {
+  position: relative;
+  display: inline-block;
+}
+
 .avatar {
   width: 120px;
   height: 120px;
   border-radius: 50%;
   object-fit: cover;
+  display: block;
+}
+
+.avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+  cursor: pointer;
+}
+
+.avatar-container:hover .avatar-overlay {
+  opacity: 1;
+}
+
+.avatar-input {
+  display: none;
+}
+
+.avatar-upload-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.avatar-upload-btn:hover {
+  background: #fff;
+  transform: scale(1.1);
 }
 
 .user-info {
@@ -792,6 +989,45 @@ watch(activeTab, (newTab) => {
   border: 1px solid #ddd;
   border-radius: 4px;
   box-sizing: border-box;
+}
+
+.avatar-upload-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.avatar-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ddd;
+}
+
+.avatar-upload-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.upload-avatar-btn {
+  padding: 8px 16px;
+  background: #409eff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.upload-avatar-btn:hover {
+  background: #66b1ff;
+}
+
+.upload-status {
+  color: #409eff;
+  font-size: 12px;
 }
 
 .form-actions {

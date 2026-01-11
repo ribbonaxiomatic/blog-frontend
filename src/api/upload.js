@@ -8,9 +8,6 @@ export const uploadImage = (file) => {
     url: '/upload',
     method: 'post',
     data: formData,
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
   })
 }
 
