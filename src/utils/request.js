@@ -1,3 +1,4 @@
+
 import axios from 'axios'
 
 // 创建 axios 实例
@@ -11,7 +12,7 @@ request.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token')
     if (token) {
-      config.headers.token = token
+      config.headers.token = token 
     }
     return config
   },

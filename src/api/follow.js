@@ -4,7 +4,7 @@ import request from '@/utils/request'
 export const toggleFollow = (data) => {
   return request({
     url: '/user-follow',
-    method: 'put',
+    method: 'post',
     data,
   })
 }

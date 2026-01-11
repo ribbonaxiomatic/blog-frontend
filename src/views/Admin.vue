@@ -309,6 +309,7 @@ const loadArticles = async () => {
       query: articleSearchQuery.value || undefined,
       page: 1,
       pageSize: 100,
+      status: 1,
     })
     if (res.code === 1) {
       adminArticles.value = res.data.rows || []

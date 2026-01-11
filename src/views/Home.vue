@@ -3,13 +3,8 @@
     <div class="home-container">
       <div class="container">
         <div class="search-bar">
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="搜索文章..."
-            @keyup.enter="handleSearch"
-          />
-          <button @click="handleSearch">搜索</button>
+          <input v-model="searchQuery" type="text" placeholder="搜索文章、用户..." @keyup.enter="goToSearch" />
+          <button @click="goToSearch">搜索</button>
         </div>
 
         <div class="content">
@@ -35,13 +30,30 @@
               </div>
             </article>
 
+            <!-- 优化后的分页条 - 无框设计 -->
             <div v-if="total > 0" class="pagination">
               <div class="pagination-info">
-                <span>共 {{ total }} 条，每页 {{ pageSize }} 条</span>
+                <span>共 {{ total }} 条，当前显示第 {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, total) }} 条</span>
               </div>
+              
               <div class="pagination-controls">
-                <button @click="goToPage(1)" :disabled="currentPage === 1" class="page-btn">首页</button>
-                <button @click="prevPage" :disabled="currentPage === 1" class="page-btn">上一页</button>
+                <button 
+                  @click="goToPage(1)" 
+                  :disabled="currentPage === 1" 
+                  class="page-btn"
+                  title="首页"
+                >
+                  首页
+                </button>
+                
+                <button 
+                  @click="prevPage" 
+                  :disabled="currentPage === 1" 
+                  class="page-btn"
+                  title="上一页"
+                >
+                  上一页
+                </button>
                 
                 <div class="page-numbers">
                   <button
@@ -52,13 +64,41 @@
                   >
                     {{ page }}
                   </button>
+                  
+                  <!-- 省略号 -->
+                  <span v-if="visiblePages[visiblePages.length - 1] < totalPages - 1" class="page-ellipsis">...</span>
+                  
+                  <!-- 显示最后一页 -->
+                  <button
+                    v-if="visiblePages[visiblePages.length - 1] < totalPages"
+                    @click="goToPage(totalPages)"
+                    :class="['page-number', { active: totalPages === currentPage }]"
+                  >
+                    {{ totalPages }}
+                  </button>
                 </div>
                 
-                <button @click="nextPage" :disabled="currentPage >= totalPages" class="page-btn">下一页</button>
-                <button @click="goToPage(totalPages)" :disabled="currentPage >= totalPages" class="page-btn">末页</button>
+                <button 
+                  @click="nextPage" 
+                  :disabled="currentPage >= totalPages" 
+                  class="page-btn"
+                  title="下一页"
+                >
+                  下一页
+                </button>
+                
+                <button 
+                  @click="goToPage(totalPages)" 
+                  :disabled="currentPage >= totalPages" 
+                  class="page-btn"
+                  title="末页"
+                >
+                  末页
+                </button>
               </div>
+              
               <div class="pagination-jump">
-                <span>跳转到</span>
+                <span>跳转至</span>
                 <input
                   v-model.number="jumpPage"
                   type="number"
@@ -91,7 +131,7 @@ const articles = ref([])
 const loading = ref(false)
 const searchQuery = ref('')
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(5)
 const total = ref(0)
 const jumpPage = ref(1)
 const userNames = ref({}) // 缓存用户ID到用户名的映射
@@ -102,7 +142,7 @@ const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
 // 计算可见的页码列表
 const visiblePages = computed(() => {
   const pages = []
-  const maxVisible = 7 // 最多显示7个页码
+  const maxVisible = 5 // 减少显示页码数，使布局更紧凑
   let start = 1
   let end = totalPages.value
 
@@ -122,6 +162,16 @@ const visiblePages = computed(() => {
   }
   return pages
 })
+
+// 添加搜索跳转方法
+const goToSearch = () => {
+  if (searchQuery.value.trim()) {
+    router.push({
+      path: '/search',
+      query: { q: searchQuery.value.trim() }
+    })
+  }
+}
 
 const loadArticles = async () => {
   loading.value = true
@@ -363,77 +413,93 @@ onMounted(() => {
   font-size: 12px;
 }
 
+/* 优化后的分页样式 - 无框设计 */
 .pagination {
-  margin-top: 30px;
-  padding: 30px 20px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border: none;
 }
 
 .pagination-info {
-  text-align: center;
-  margin-bottom: 20px;
   color: #666;
   font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 0;
 }
 
 .pagination-controls {
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  justify-content: center;
 }
 
 .page-btn {
-  padding: 8px 16px;
-  background: #409eff;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
+  padding: 10px 16px;
+  background: #fff;
+  color: #606266;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
   transition: all 0.3s;
-}
-
-.page-btn:disabled {
-  background: #c0c4cc;
-  cursor: not-allowed;
-  opacity: 0.6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .page-btn:hover:not(:disabled) {
-  background: #66b1ff;
+  background: #f5f7fa;
+  border-color: #c0c4cc;
   transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.page-btn:disabled {
+  background: #f5f7fa;
+  color: #c0c4cc;
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
 }
 
 .page-numbers {
   display: flex;
-  gap: 5px;
-  margin: 0 10px;
+  gap: 6px;
+  margin: 0 8px;
 }
 
 .page-number {
-  min-width: 36px;
-  height: 36px;
+  min-width: 40px;
+  height: 40px;
   padding: 0 12px;
   background: #fff;
   color: #606266;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
   transition: all 0.3s;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .page-number:hover {
-  color: #409eff;
+  background: #f5f7fa;
   border-color: #409eff;
+  color: #409eff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .page-number.active {
@@ -441,44 +507,97 @@ onMounted(() => {
   color: #fff;
   border-color: #409eff;
   font-weight: 600;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+}
+
+.page-ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+  color: #c0c4cc;
+  font-weight: 500;
 }
 
 .pagination-jump {
   display: flex;
-  justify-content: center;
   align-items: center;
   gap: 8px;
   font-size: 14px;
   color: #606266;
+  background: #f8f9fa;
+  padding: 10px 16px;
+  border-radius: 8px;
 }
 
 .jump-input {
   width: 60px;
-  padding: 6px 8px;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
+  padding: 8px;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
   text-align: center;
   font-size: 14px;
+  transition: all 0.2s;
 }
 
 .jump-input:focus {
   outline: none;
   border-color: #409eff;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
 }
 
 .jump-btn {
-  padding: 6px 16px;
+  padding: 8px 16px;
   background: #409eff;
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
   transition: all 0.3s;
 }
 
 .jump-btn:hover {
   background: #66b1ff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(64, 158, 255, 0.2);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .pagination-controls {
+    gap: 6px;
+  }
+  
+  .page-btn, .page-number {
+    padding: 8px 12px;
+    min-width: 36px;
+    height: 36px;
+    font-size: 13px;
+  }
+  
+  .page-numbers {
+    margin: 0 4px;
+    gap: 4px;
+  }
+  
+  .pagination-jump {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 8px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-numbers {
+    display: none;
+  }
+  
+  .pagination-info {
+    font-size: 13px;
+  }
 }
 </style>
-

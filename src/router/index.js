@@ -50,6 +50,12 @@ const router = createRouter({
       component: () => import('@/views/Admin.vue'),
       meta: { requiresAuth: true, requiresAdmin: true },
     },
+    // 在 routes 数组中添加搜索路由
+    {
+      path: '/search',
+      name: 'search',
+      component: () => import('@/views/Search.vue'),
+    }
   ],
 })
 

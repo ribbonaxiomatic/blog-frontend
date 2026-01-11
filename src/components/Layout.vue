@@ -8,6 +8,8 @@
         <nav class="nav">
           <router-link to="/" class="nav-item">首页</router-link>
           <template v-if="userStore.isLoggedIn">
+            <!-- 在导航栏中添加搜索链接 -->
+            <router-link to="/search" class="nav-item">搜索</router-link>
             <router-link to="/article/edit" class="nav-item">写文章</router-link>
             <router-link to="/favorites" class="nav-item">我的收藏</router-link>
             <router-link :to="`/profile/${userStore.userInfo?.userId}`" class="nav-item">个人中心</router-link>
@@ -157,4 +159,3 @@ const handleLogout = () => {
   color: #666;
 }
 </style>
-
