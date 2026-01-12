@@ -18,11 +18,14 @@ export const addComment = (data) => {
   })
 }
 
-// 删除评论
+// 删除评论（支持单个或多个 ID）
 export const deleteComments = (ids) => {
+  // 确保 ids 是数组（即使只删一个）
+  const idList = Array.isArray(ids) ? ids : [ids];
+
   return request({
-    url: `/comments/${ids}`,
+    url: '/comments',
     method: 'delete',
+    params: { ids: idList } // 👈 关键：用 params 传 ids
   })
 }
-

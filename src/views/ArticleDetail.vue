@@ -199,7 +199,8 @@ const loadComments = async () => {
       pageSize: commentPageSize.value,
     })
     if (res.code === 1) {
-      comments.value = res.data.rows || []
+      const rawComments = res.data.rows || []
+      comments.value = rawComments.filter(comment => comment.isDeleted !== 1)
       commentTotal.value = res.data.total || 0
       // 构建评论树
       buildCommentTree()
