@@ -28,14 +28,14 @@
           <div class="actions">
             <button
               @click="handleLike"
-              :class="['action-btn', { active: isLiked }]"
+              class="action-btn"
             >
               👍 点赞 ({{ article.likeCount || 0 }})
             </button>
             <button
               v-if="userStore.isLoggedIn"
               @click="handleFavorite"
-              :class="['action-btn', { active: isFavorited }]"
+              class="action-btn"
             >
               ⭐ 收藏 ({{ article.favoriteCount || 0 }})
             </button>
@@ -143,8 +143,6 @@ const commentContent = ref('')
 const commentPage = ref(1)
 const commentPageSize = ref(10)
 const commentTotal = ref(0)
-const isLiked = ref(false)
-const isFavorited = ref(false)
 const authorName = ref('')
 const authorInfo = ref({}) // 保存作者完整信息
 const commentUserNames = ref({}) // 缓存评论用户的userName
@@ -159,6 +157,7 @@ const loadArticle = async () => {
     const res = await getArticleById(route.params.id)
     if (res.code === 1) {
       article.value = res.data
+      // 注意：后端未提供点赞/收藏状态查询API，前端不区分用户是否已操作
       // 加载作者信息
       if (article.value?.userId) {
         loadAuthorInfo(article.value.userId)
@@ -197,15 +196,30 @@ const loadComments = async () => {
       articleId: route.params.id,
       page: commentPage.value,
       pageSize: commentPageSize.value,
+      // 仅拉取未被删除的评论
+      isDeleted: 0,
     })
     if (res.code === 1) {
       const rawComments = res.data.rows || []
-      comments.value = rawComments.filter(comment => comment.isDeleted !== 1)
-      commentTotal.value = res.data.total || 0
+      const filteredComments = rawComments.filter(comment => comment.isDeleted !== 1)
+      const deletedInResponse = rawComments.length - filteredComments.length
+      const baseTotal = res.data?.total ?? filteredComments.length
+      const isFirstPage = commentPage.value === 1
+      const pageSize = commentPageSize.value
+
+      comments.value = filteredComments
+      // 基于当前页数据推断真实总数：
+      // 1) 如果是首页且数量未占满一页，说明没有更多页，直接用当前有效数量
+      // 2) 否则用后端 total 并扣掉当前页过滤掉的已删除记录，避免软删除后计数不变/翻倍
+      if (isFirstPage && filteredComments.length < pageSize) {
+        commentTotal.value = filteredComments.length
+      } else {
+        commentTotal.value = Math.max(0, baseTotal - deletedInResponse)
+      }
       // 构建评论树
       buildCommentTree()
       // 加载所有评论用户的用户名
-      loadAllCommentUsers(comments.value)
+      loadAllCommentUsers(filteredComments)
     }
   } catch (error) {
     console.error('加载评论失败:', error)
@@ -284,18 +298,21 @@ const handleLike = async () => {
     alert('请先登录')
     return
   }
+
+  if (!article.value) return
+
   try {
+    // 调用点赞切换接口
     await toggleArticleLike({
       articleId: article.value.articleId,
       userId: userStore.userInfo.userId,
     })
-    // 重新获取文章数据，确保数据一致性，避免多次点赞问题
+    // 操作成功后重新获取文章信息以更新点赞数
+    // 注意：由于后端未提供状态查询API，不区分是点赞还是取消点赞
     await loadArticle()
-    // 注意：isLiked 状态需要从后端获取，这里暂时使用乐观更新
-    // 如果后端返回点赞状态，应该使用后端的数据
-    isLiked.value = !isLiked.value
   } catch (error) {
     console.error('点赞失败:', error)
+    alert('点赞操作失败，请重试')
   }
 }
 
@@ -304,18 +321,20 @@ const handleFavorite = async () => {
     alert('请先登录')
     return
   }
+
+  if (!article.value) return
+
   try {
+    // 调用收藏切换接口
     await toggleArticleFavorite({
       articleId: article.value.articleId,
       userId: userStore.userInfo.userId,
     })
-    // 重新获取文章数据，确保数据一致性
+    // 操作成功后重新获取文章信息以更新收藏数
     await loadArticle()
-    // 注意：isFavorited 状态需要从后端获取，这里暂时使用乐观更新
-    // 如果后端返回收藏状态，应该使用后端的数据
-    isFavorited.value = !isFavorited.value
   } catch (error) {
     console.error('收藏失败:', error)
+    alert('收藏操作失败，请重试')
   }
 }
 
@@ -340,8 +359,11 @@ const handleSubmitComment = async () => {
     commentPage.value = 1
     // 重新加载评论列表
     await loadComments()
-    // 重新获取文章数据，确保评论数准确
-    await loadArticle()
+    // 根据后端文档，评论操作会自动更新commentCount
+    // 这里直接增加本地计数，避免重新加载文章导致其他计数被覆盖
+    if (article.value) {
+      article.value.commentCount = (article.value.commentCount || 0) + 1
+    }
   } catch (error) {
     console.error('发表评论失败:', error)
   }
@@ -372,8 +394,11 @@ const deleteComment = async (commentId) => {
     if (res.code === 1) {
       // 重新加载评论列表，确保数据一致性
       await loadComments()
-      // 重新获取文章数据，确保评论数准确
-      await loadArticle()
+      // 根据后端文档，删除评论操作会自动更新commentCount
+      // 这里直接减少本地计数，避免重新加载文章导致其他计数被覆盖
+      if (article.value) {
+        article.value.commentCount = Math.max(0, (article.value.commentCount || 0) - 1)
+      }
     }
   } catch (error) {
     console.error('删除评论失败:', error)
