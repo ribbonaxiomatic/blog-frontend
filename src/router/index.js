@@ -55,6 +55,12 @@ const router = createRouter({
       path: '/search',
       name: 'search',
       component: () => import('@/views/Search.vue'),
+    },
+    {
+      path: '/ai',
+      name: 'ai-assistant',
+      component: () => import('@/views/AiAssistant.vue'),
+      meta: { requiresAuth: true },
     }
   ],
 })
