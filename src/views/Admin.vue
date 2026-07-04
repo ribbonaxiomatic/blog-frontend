@@ -291,7 +291,6 @@ const loadUsers = async () => {
   try {
     const res = await getUserList({
       query: userSearchQuery.value || undefined,
-      status: 0,
       page: 1,
       pageSize: 100,
     })
