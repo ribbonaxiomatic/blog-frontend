@@ -81,10 +81,10 @@
                   >
                     查看草稿 #{{ message.toolResult.articleId }}
                   </button>
-                  <div v-if="message.toolResult.articles?.length" class="article-results">
+                  <div v-if="getDisplayArticles(message.toolResult.articles).length" class="article-results">
                     <button
-                      v-for="article in message.toolResult.articles"
-                      :key="article.articleId || article.title"
+                      v-for="article in getDisplayArticles(message.toolResult.articles)"
+                      :key="article.articleId"
                       class="article-result"
                       @click="goToArticle(article.articleId)"
                     >
@@ -354,7 +354,18 @@ const handleStop = async () => {
 }
 
 const goToArticle = (articleId) => {
+  if (!articleId) return
   router.push(`/article/${articleId}`)
+}
+
+const getDisplayArticles = (articles = []) => {
+  const seen = new Set()
+  return articles.filter((article) => {
+    const articleId = article?.articleId
+    if (!articleId || seen.has(articleId)) return false
+    seen.add(articleId)
+    return true
+  })
 }
 
 const openDraftDialog = async (articleId) => {
