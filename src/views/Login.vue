@@ -66,23 +66,29 @@ const handleLogin = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 60vh;
-  padding: 40px 20px;
+  min-height: calc(100vh - 160px);
+  padding: 56px 20px;
+  background:
+    linear-gradient(135deg, rgba(79, 142, 247, 0.10), rgba(124, 92, 252, 0.08)),
+    var(--color-bg);
 }
 
 .login-box {
   width: 100%;
-  max-width: 400px;
-  background: #fff;
-  padding: 40px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  max-width: 420px;
+  background: var(--color-surface);
+  padding: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: 22px;
+  box-shadow: var(--shadow-lg);
 }
 
 h2 {
   text-align: center;
-  margin-bottom: 30px;
-  color: #333;
+  margin-bottom: 28px;
+  color: var(--color-text);
+  font-size: 28px;
+  letter-spacing: 0;
 }
 
 .form-group {
@@ -92,26 +98,31 @@ h2 {
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  color: #333;
-  font-weight: 500;
+  color: var(--color-text);
+  font-weight: 700;
 }
 
 .form-group input {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 13px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
   font-size: 14px;
   box-sizing: border-box;
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #409eff;
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+  box-shadow: 0 0 0 4px rgba(79, 142, 247, 0.14);
 }
 
 .error-message {
-  color: #f56c6c;
+  color: #ef4444;
   font-size: 14px;
   margin-bottom: 15px;
   text-align: center;
@@ -119,39 +130,55 @@ h2 {
 
 .submit-btn {
   width: 100%;
-  padding: 12px;
-  background: #409eff;
+  padding: 13px 18px;
+  background: var(--gradient-primary);
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 999px;
   font-size: 16px;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.3s;
+  box-shadow: 0 14px 28px rgba(79, 142, 247, 0.24);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: #66b1ff;
+  transform: translateY(-1px);
+  box-shadow: 0 18px 34px rgba(79, 142, 247, 0.30);
 }
 
 .submit-btn:disabled {
-  background: #c0c4cc;
+  opacity: 0.58;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .link-text {
   text-align: center;
   margin-top: 20px;
-  color: #666;
+  color: var(--color-text-muted);
   font-size: 14px;
 }
 
 .link-text a {
-  color: #409eff;
+  color: var(--color-primary);
   text-decoration: none;
+  font-weight: 700;
 }
 
 .link-text a:hover {
-  text-decoration: underline;
+  color: var(--color-accent);
+}
+
+@media (max-width: 640px) {
+  .login-container {
+    padding: 32px 16px;
+  }
+
+  .login-box {
+    padding: 28px 22px;
+    border-radius: 18px;
+  }
 }
 </style>
 
