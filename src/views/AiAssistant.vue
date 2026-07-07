@@ -82,7 +82,7 @@
                   <span v-if="msg.loading" class="cursor">▍</span>
                 </div>
                 <!-- 工具调用结果：博客卡片 -->
-                <div v-if="msg.blog" class="blog-card" @click="openBlog(msg.blog)">
+                <div v-if="msg.blog" class="blog-card" @click="previewBlog(msg.blog)">
                   <div class="blog-card-header">
                     <el-icon><Document /></el-icon>
                     <span>{{ msg.blog.success ? '博客创建成功' : '博客操作结果' }}</span>
@@ -125,6 +125,43 @@
         </div>
       </section>
     </div>
+
+    <!-- 预览确认弹窗 -->
+    <el-dialog
+      v-model="previewVisible"
+      title="博客预览确认"
+      width="640px"
+      :close-on-click-modal="false"
+      destroy-on-close
+    >
+      <div v-if="previewLoading" class="preview-loading">
+        <el-icon class="is-loading" :size="24"><Loading /></el-icon>
+        <span>加载文章预览中...</span>
+      </div>
+      <div v-else-if="previewArticle" class="preview-body">
+        <div v-if="previewArticle.coverImage" class="preview-cover">
+          <img :src="previewArticle.coverImage" alt="封面图" />
+        </div>
+        <h2 class="preview-title">{{ previewArticle.title }}</h2>
+        <div v-if="previewArticle.tagName" class="preview-meta">
+          <el-tag size="small" type="info">{{ previewArticle.tagName }}</el-tag>
+        </div>
+        <p v-if="previewArticle.summary" class="preview-summary">{{ previewArticle.summary }}</p>
+        <div class="preview-content">{{ previewArticle.content }}</div>
+      </div>
+      <div v-else class="preview-empty">
+        <p>无法加载文章信息，请稍后重试。</p>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="previewVisible = false">关闭</el-button>
+          <el-button type="info" @click="handleViewArticle">仅查看文章</el-button>
+          <el-button type="primary" :loading="previewPublishing" @click="handlePublish">
+            确认发布
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </Layout>
 </template>
 
@@ -140,6 +177,7 @@ import {
   ChatDotRound,
   MoreFilled,
   Document,
+  Loading,
 } from '@element-plus/icons-vue'
 import Layout from '@/components/Layout.vue'
 import {
@@ -152,6 +190,7 @@ import {
   stopChat,
   chatStream,
 } from '@/api/ai'
+import { getArticleById, publishArticle } from '@/api/article'
 
 const router = useRouter()
 
@@ -175,6 +214,12 @@ const GROUP_ORDER = ['当天', '最近30天', '最近1年', '1年以上']
 const historyGroups = ref([])
 
 const msgBoxRef = ref(null)
+
+// ===== 预览确认弹窗 =====
+const previewVisible = ref(false)
+const previewLoading = ref(false)
+const previewPublishing = ref(false)
+const previewArticle = ref(null) // { articleId, title, summary, content, coverImage, tagName, ... }
 
 // 滚动到底部
 const scrollToBottom = async () => {
@@ -330,6 +375,9 @@ const sendMessage = async (text) => {
         // 工具调用结果：博客卡片
         if (data.blog) {
           assistantMsg.blog = data.blog
+          if (data.blog.success && data.blog.articleId) {
+            previewBlog(data.blog)
+          }
         }
       }
     },
@@ -363,11 +411,49 @@ const handleStop = async () => {
   }
 }
 
-// 打开工具创建的博客
-const openBlog = (blog) => {
-  if (blog?.success && blog.articleId) {
-    router.push(`/article/${blog.articleId}`)
+// 预览工具创建的博客
+const previewBlog = async (blog) => {
+  if (!blog?.success || !blog.articleId) return
+  previewVisible.value = true
+  previewLoading.value = true
+  previewArticle.value = null
+  try {
+    const res = await getArticleById(blog.articleId)
+    if (res.code === 1) {
+      previewArticle.value = res.data
+    }
+  } catch {
+    ElMessage.error('加载文章预览失败')
+  } finally {
+    previewLoading.value = false
   }
+}
+
+// 发布文章
+const handlePublish = async () => {
+  if (!previewArticle.value) return
+  previewPublishing.value = true
+  try {
+    const res = await publishArticle(previewArticle.value.articleId)
+    if (res.code === 1) {
+      ElMessage.success('文章已发布')
+      previewVisible.value = false
+      router.push(`/article/${previewArticle.value.articleId}`)
+    } else {
+      ElMessage.error(res.msg || '发布失败')
+    }
+  } catch {
+    ElMessage.error('发布请求失败')
+  } finally {
+    previewPublishing.value = false
+  }
+}
+
+// 查看文章（不发布）
+const handleViewArticle = () => {
+  if (!previewArticle.value) return
+  previewVisible.value = false
+  router.push(`/article/${previewArticle.value.articleId}`)
 }
 
 onMounted(() => {
@@ -686,6 +772,76 @@ onMounted(() => {
 
 .input-actions {
   flex-shrink: 0;
+}
+
+/* 预览确认弹窗 */
+.preview-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 0;
+  color: #909399;
+  font-size: 14px;
+}
+
+.preview-body {
+  max-height: 460px;
+  overflow-y: auto;
+}
+
+.preview-cover {
+  margin-bottom: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.preview-cover img {
+  width: 100%;
+  max-height: 240px;
+  object-fit: cover;
+}
+
+.preview-title {
+  margin: 0 0 10px;
+  font-size: 20px;
+  color: #303133;
+  line-height: 1.4;
+}
+
+.preview-meta {
+  margin-bottom: 12px;
+}
+
+.preview-summary {
+  color: #606266;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  background: #f5f7fa;
+  border-radius: 6px;
+  border-left: 3px solid #409eff;
+}
+
+.preview-content {
+  font-size: 14px;
+  color: #303133;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 12px 14px;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px solid #ebeef5;
+}
+
+.preview-empty {
+  text-align: center;
+  padding: 40px 0;
+  color: #909399;
 }
 
 @media (max-width: 768px) {

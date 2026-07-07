@@ -49,6 +49,13 @@
                 文章
               </button>
               <button
+                v-if="isOwnProfile"
+                @click="activeTab = 'drafts'"
+                :class="['tab', { active: activeTab === 'drafts' }]"
+              >
+                草稿箱
+              </button>
+              <button
                 @click="activeTab = 'followers'"
                 :class="['tab', { active: activeTab === 'followers' }]"
               >
@@ -85,6 +92,35 @@
                     <span>{{ formatDate(article.publishedAt || article.createdAt) }}</span>
                     <span>阅读 {{ article.viewCount || 0 }}</span>
                     <span>点赞 {{ article.likeCount || 0 }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="activeTab === 'drafts'" class="articles-list">
+                <div v-if="draftLoading" class="loading">加载中...</div>
+                <div v-else-if="draftArticles.length === 0" class="empty-drafts">
+                  <p>暂无草稿</p>
+                  <button @click="$router.push('/article/edit')" class="write-btn">写一篇文章</button>
+                </div>
+                <div v-for="article in draftArticles" :key="article.articleId" class="article-item draft-item">
+                  <div class="article-header">
+                    <h3 @click="editArticle(article.articleId)" class="article-title">
+                      {{ article.title || '无标题' }}
+                    </h3>
+                    <div class="article-actions">
+                      <button @click="editArticle(article.articleId)" class="edit-article-btn">
+                        编辑
+                      </button>
+                      <button
+                        @click="deleteArticle(article.articleId)"
+                        class="delete-article-btn"
+                      >
+                        删除
+                      </button>
+                    </div>
+                  </div>
+                  <div class="article-meta">
+                    <span>创建于 {{ formatDate(article.createdAt) }}</span>
                   </div>
                 </div>
               </div>
@@ -260,6 +296,8 @@ const activeTab = ref('articles')
 const showEditModal = ref(false)
 const showPasswordModal = ref(false)
 const userArticles = ref([])
+const draftArticles = ref([])
+const draftLoading = ref(false)
 const followers = ref([])
 const following = ref([])
 const isFollowing = ref(false)
@@ -315,6 +353,25 @@ const loadUserArticles = async () => {
     }
   } catch (error) {
     console.error('加载文章失败:', error)
+  }
+}
+
+const loadDrafts = async () => {
+  draftLoading.value = true
+  try {
+    const res = await getArticleList({
+      userId: userId.value,
+      status: 0,
+      page: 1,
+      pageSize: 20,
+    })
+    if (res.code === 1) {
+      draftArticles.value = res.data.rows || []
+    }
+  } catch (error) {
+    console.error('加载草稿失败:', error)
+  } finally {
+    draftLoading.value = false
   }
 }
 
@@ -625,7 +682,9 @@ watch(userId, () => {
 
 // 监听 tab 切换
 watch(activeTab, (newTab) => {
-  if (newTab === 'followers') {
+  if (newTab === 'drafts') {
+    loadDrafts()
+  } else if (newTab === 'followers') {
     loadFollowers()
   } else if (newTab === 'following') {
     loadFollowing()
@@ -836,6 +895,35 @@ watch(activeTab, (newTab) => {
 
 .article-title:hover {
   color: #409eff;
+}
+
+.empty-drafts {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.empty-drafts p {
+  margin: 0 0 16px;
+  font-size: 15px;
+}
+
+.write-btn {
+  padding: 8px 20px;
+  background: #409eff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.write-btn:hover {
+  background: #66b1ff;
+}
+
+.draft-item {
+  border-left: 3px solid #e6a23c;
 }
 
 .article-actions {

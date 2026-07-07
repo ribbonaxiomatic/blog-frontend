@@ -43,3 +43,12 @@ export const deleteArticles = (ids) => {
   })
 }
 
+// 发布文章（将 status 改为 1）
+export const publishArticle = (articleId) => {
+  return request({
+    url: '/articles',
+    method: 'put',
+    data: { articleId, status: 1 },
+  })
+}
+
