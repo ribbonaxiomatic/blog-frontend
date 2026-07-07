@@ -73,6 +73,13 @@
               @keyup.enter="loadArticles"
             />
             <button @click="loadArticles">搜索</button>
+            <button @click="loadVectorStatus" :disabled="vectorLoading">查看向量库状态</button>
+            <button @click="handleSyncVectors" :disabled="vectorSyncing">
+              {{ vectorSyncing ? '同步中...' : '同步文章到向量库' }}
+            </button>
+          </div>
+          <div v-if="vectorStatusMessage" class="vector-status">
+            {{ vectorStatusMessage }}
           </div>
           <table class="data-table">
             <thead>
@@ -257,7 +264,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { getUserList, addUser, deleteUsers, updateUser } from '@/api/user'
-import { getArticleList, deleteArticles } from '@/api/article'
+import { getArticleList, deleteArticles, getArticleVectorStatus, syncArticleVectors } from '@/api/article'
 import { getTagList, addTag, deleteTags, updateTag } from '@/api/tag'
 import Layout from '@/components/Layout.vue'
 
@@ -267,6 +274,9 @@ const adminArticles = ref([])
 const tags = ref([])
 const userSearchQuery = ref('')
 const articleSearchQuery = ref('')
+const vectorLoading = ref(false)
+const vectorSyncing = ref(false)
+const vectorStatusMessage = ref('')
 const showAddUserModal = ref(false)
 const showEditUserModal = ref(false)
 const showAddTagModal = ref(false)
@@ -291,7 +301,6 @@ const loadUsers = async () => {
   try {
     const res = await getUserList({
       query: userSearchQuery.value || undefined,
-      status: 0,
       page: 1,
       pageSize: 100,
     })
@@ -316,6 +325,43 @@ const loadArticles = async () => {
     }
   } catch (error) {
     console.error('加载文章失败:', error)
+  }
+}
+
+const loadVectorStatus = async () => {
+  vectorLoading.value = true
+  try {
+    const res = await getArticleVectorStatus()
+    if (res.code === 1) {
+      const data = res.data || {}
+      vectorStatusMessage.value = data.isEmpty
+        ? '向量库暂无可用文章，请先同步已发布文章。'
+        : `向量库当前可检索文档约 ${data.docCount || 0} 条。`
+    }
+  } catch (error) {
+    console.error('加载向量库状态失败:', error)
+    vectorStatusMessage.value = '向量库状态获取失败，请确认后端、ES 和 embedding 配置正常。'
+  } finally {
+    vectorLoading.value = false
+  }
+}
+
+const handleSyncVectors = async () => {
+  if (!confirm('确定要将所有已发布文章同步到向量库吗？')) return
+
+  vectorSyncing.value = true
+  vectorStatusMessage.value = '正在同步已发布文章到向量库...'
+  try {
+    const res = await syncArticleVectors()
+    if (res.code === 1) {
+      vectorStatusMessage.value = res.data || '文章向量同步完成。'
+      await loadVectorStatus()
+    }
+  } catch (error) {
+    console.error('同步向量库失败:', error)
+    vectorStatusMessage.value = '同步失败，请确认 Elasticsearch 和通义千问 embedding 服务可用。'
+  } finally {
+    vectorSyncing.value = false
   }
 }
 
@@ -541,6 +587,20 @@ h2 {
 
 .toolbar button:hover {
   background: #66b1ff;
+}
+
+.toolbar button:disabled {
+  background: #c0c4cc;
+  cursor: not-allowed;
+}
+
+.vector-status {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  background: #ecf5ff;
+  color: #409eff;
+  font-size: 14px;
 }
 
 .data-table {

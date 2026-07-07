@@ -124,6 +124,7 @@ import { toggleArticleLike } from '@/api/like'
 import { toggleArticleFavorite } from '@/api/favorite'
 import { getUserById } from '@/api/user'
 import Layout from '@/components/Layout.vue'
+import { renderMarkdown } from '@/utils/markdown'
 
 // 计算缩进（最多4层）
 const getIndent = (depth) => {
@@ -480,7 +481,7 @@ CommentChildrenRecursive = defineComponent({
 
 const formatContent = (content) => {
   if (!content) return ''
-  return content.replace(/\n/g, '<br>')
+  return renderMarkdown(content)
 }
 
 onMounted(() => {
@@ -595,6 +596,77 @@ onMounted(() => {
   color: #333;
   margin-bottom: 30px;
   font-size: 16px;
+}
+
+.content :deep(h1),
+.content :deep(h2),
+.content :deep(h3),
+.content :deep(h4),
+.content :deep(h5),
+.content :deep(h6) {
+  color: #222;
+  line-height: 1.35;
+  margin: 28px 0 12px;
+}
+
+.content :deep(h1) {
+  font-size: 28px;
+}
+
+.content :deep(h2) {
+  font-size: 24px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.content :deep(h3) {
+  font-size: 20px;
+}
+
+.content :deep(p) {
+  margin: 0 0 16px;
+}
+
+.content :deep(ul),
+.content :deep(ol) {
+  margin: 0 0 18px 22px;
+  padding: 0;
+}
+
+.content :deep(li) {
+  margin: 6px 0;
+}
+
+.content :deep(a) {
+  color: #409eff;
+  text-decoration: none;
+}
+
+.content :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.content :deep(code) {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #f5f7fa;
+  color: #d14;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 0.92em;
+}
+
+.content :deep(pre) {
+  margin: 0 0 18px;
+  padding: 14px;
+  border-radius: 8px;
+  background: #1f2933;
+  overflow-x: auto;
+}
+
+.content :deep(pre code) {
+  padding: 0;
+  background: transparent;
+  color: #f8fafc;
 }
 
 .actions {

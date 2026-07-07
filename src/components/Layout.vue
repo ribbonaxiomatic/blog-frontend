@@ -10,6 +10,7 @@
           <template v-if="userStore.isLoggedIn">
             <!-- 在导航栏中添加搜索链接 -->
             <router-link to="/search" class="nav-item">搜索</router-link>
+            <router-link to="/assistant" class="nav-item">AI助手</router-link>
             <router-link to="/article/edit" class="nav-item">写文章</router-link>
             <router-link to="/ai" class="nav-item">AI助手</router-link>
             <router-link to="/favorites" class="nav-item">我的收藏</router-link>
