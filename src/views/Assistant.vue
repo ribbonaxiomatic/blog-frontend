@@ -77,12 +77,20 @@
               :class="['message-row', message.role]"
             >
               <div class="message-bubble">
+                <div
+                  v-if="message.content"
+                  class="message-markdown"
+                  v-html="renderMarkdown(message.content)"
+                ></div>
                 <div v-if="message.toolResult" class="tool-card">
                   <div class="tool-title">
                     <CircleCheck v-if="message.toolResult.success" />
                     <Warning v-else />
                     <span>{{ message.toolResult.message || '工具执行完成' }}</span>
                   </div>
+                  <p v-if="getToolNarration(message.toolResult)" class="tool-narration">
+                    {{ getToolNarration(message.toolResult) }}
+                  </p>
                   <button
                     v-if="message.toolResult.articleId"
                     class="link-btn"
@@ -103,7 +111,6 @@
                     </button>
                   </div>
                 </div>
-                <div v-else class="message-markdown" v-html="renderMarkdown(message.content)"></div>
               </div>
             </article>
 
@@ -428,6 +435,21 @@ const getDisplayArticles = (articles = []) => {
     seen.add(articleId)
     return true
   })
+}
+
+const getToolNarration = (toolResult) => {
+  if (!toolResult) return ''
+  const articles = getDisplayArticles(toolResult.articles || [])
+  if (articles.length > 0) {
+    return `我找到了 ${articles.length} 篇相关博客，你可以先看摘要，点击卡片进入文章详情。`
+  }
+  if (toolResult.articleId) {
+    return '草稿已经准备好，可以先检查内容，再选择修改并发布。'
+  }
+  if (toolResult.success === false) {
+    return '这次没有拿到可展示的结果，可以换一个更具体的关键词再试。'
+  }
+  return ''
 }
 
 const openDraftDialog = async (articleId) => {
@@ -923,6 +945,7 @@ onMounted(async () => {
 
 .tool-card {
   min-width: 260px;
+  margin-top: 10px;
 }
 
 .tool-title {
@@ -935,6 +958,13 @@ onMounted(async () => {
 .tool-title svg {
   width: 18px;
   height: 18px;
+}
+
+.tool-narration {
+  margin: 8px 0 0;
+  color: #606266;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .link-btn {
