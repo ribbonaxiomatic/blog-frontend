@@ -77,9 +77,9 @@
                   <button
                     v-if="message.toolResult.articleId"
                     class="link-btn"
-                    @click="goToArticle(message.toolResult.articleId)"
+                    @click="openDraftDialog(message.toolResult.articleId)"
                   >
-                    查看文章 #{{ message.toolResult.articleId }}
+                    查看草稿 #{{ message.toolResult.articleId }}
                   </button>
                   <div v-if="message.toolResult.articles?.length" class="article-results">
                     <button
@@ -94,7 +94,7 @@
                     </button>
                   </div>
                 </div>
-                <p v-else>{{ message.content }}</p>
+                <div v-else class="message-markdown" v-html="renderMarkdown(message.content)"></div>
               </div>
             </article>
 
@@ -127,6 +127,46 @@
         </footer>
       </section>
     </div>
+
+    <div v-if="draftDialogVisible" class="draft-dialog-backdrop">
+      <section class="draft-dialog" role="dialog" aria-modal="true" aria-labelledby="draft-dialog-title">
+        <header class="draft-dialog-header">
+          <div>
+            <h2 id="draft-dialog-title">AI 草稿确认</h2>
+            <p>发布前可以先检查和调整内容。</p>
+          </div>
+          <button class="icon-btn" title="关闭" @click="closeDraftDialog">×</button>
+        </header>
+
+        <div v-if="draftLoading" class="draft-state">正在加载草稿...</div>
+        <form v-else class="draft-form" @submit.prevent="publishDraft">
+          <label>
+            <span>标题</span>
+            <input v-model="draftForm.title" type="text" required />
+          </label>
+
+          <label>
+            <span>摘要</span>
+            <textarea v-model="draftForm.summary" rows="3"></textarea>
+          </label>
+
+          <label>
+            <span>正文</span>
+            <textarea v-model="draftForm.content" rows="14" required></textarea>
+          </label>
+
+          <div v-if="draftError" class="draft-error">{{ draftError }}</div>
+
+          <footer class="draft-actions">
+            <button type="button" class="secondary-btn" @click="closeDraftDialog">取消</button>
+            <button type="button" class="secondary-btn" @click="goToArticleEdit">完整编辑</button>
+            <button type="submit" class="send-btn" :disabled="draftSaving">
+              {{ draftSaving ? '发布中...' : '修改并发布' }}
+            </button>
+          </footer>
+        </form>
+      </section>
+    </div>
   </Layout>
 </template>
 
@@ -135,6 +175,8 @@ import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { CircleCheck, Plus, Promotion, VideoPause, Warning } from '@element-plus/icons-vue'
 import Layout from '@/components/Layout.vue'
+import { getArticleById, updateArticle } from '@/api/article'
+import { renderMarkdown } from '@/utils/markdown'
 import {
   createSession,
   getHistorySessions,
@@ -156,6 +198,18 @@ const sessionLoading = ref(false)
 const streaming = ref(false)
 const messageListRef = ref(null)
 const activeController = ref(null)
+const draftDialogVisible = ref(false)
+const draftLoading = ref(false)
+const draftSaving = ref(false)
+const draftError = ref('')
+const draftForm = ref({
+  articleId: null,
+  title: '',
+  summary: '',
+  content: '',
+  coverImage: '',
+  tagId: '',
+})
 
 const canSend = computed(() => {
   return question.value.trim() && sessionId.value && !streaming.value && !sessionLoading.value
@@ -280,6 +334,9 @@ const handleChatEvent = (event, assistantMessage) => {
     assistantMessage.content += data
   } else if (data?.blog) {
     assistantMessage.toolResult = data.blog
+    if (data.blog.success && data.blog.articleId) {
+      openDraftDialog(data.blog.articleId)
+    }
   } else if (data?.error) {
     assistantMessage.content += data.error
   }
@@ -298,6 +355,87 @@ const handleStop = async () => {
 
 const goToArticle = (articleId) => {
   router.push(`/article/${articleId}`)
+}
+
+const openDraftDialog = async (articleId) => {
+  if (!articleId) return
+
+  draftDialogVisible.value = true
+  draftLoading.value = true
+  draftError.value = ''
+  draftForm.value = {
+    articleId,
+    title: '',
+    summary: '',
+    content: '',
+    coverImage: '',
+    tagId: '',
+  }
+
+  try {
+    const res = await getArticleById(articleId)
+    if (res.code === 1 && res.data) {
+      const article = res.data
+      draftForm.value = {
+        articleId: article.articleId || articleId,
+        title: article.title || '',
+        summary: article.summary || '',
+        content: article.content || '',
+        coverImage: article.coverImage || '',
+        tagId: article.tagId || '',
+      }
+    } else {
+      draftError.value = res.msg || '草稿加载失败'
+    }
+  } catch (error) {
+    draftError.value = error.message || '草稿加载失败'
+  } finally {
+    draftLoading.value = false
+  }
+}
+
+const closeDraftDialog = () => {
+  draftDialogVisible.value = false
+  draftError.value = ''
+}
+
+const publishDraft = async () => {
+  if (!draftForm.value.articleId || draftSaving.value) return
+
+  draftSaving.value = true
+  draftError.value = ''
+  try {
+    const payload = {
+      articleId: draftForm.value.articleId,
+      title: draftForm.value.title,
+      summary: draftForm.value.summary,
+      content: draftForm.value.content,
+      coverImage: draftForm.value.coverImage,
+      status: 1,
+      publishedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    }
+
+    if (draftForm.value.tagId) {
+      payload.tagId = draftForm.value.tagId
+    }
+
+    const res = await updateArticle(payload)
+    if (res.code === 1) {
+      closeDraftDialog()
+      goToArticle(draftForm.value.articleId)
+    } else {
+      draftError.value = res.msg || '发布失败'
+    }
+  } catch (error) {
+    draftError.value = error.message || '发布失败'
+  } finally {
+    draftSaving.value = false
+  }
+}
+
+const goToArticleEdit = () => {
+  if (!draftForm.value.articleId) return
+  router.push(`/article/edit/${draftForm.value.articleId}`)
 }
 
 const formatTime = (value) => {
@@ -578,6 +716,84 @@ onMounted(async () => {
   margin: 0;
 }
 
+.message-markdown :deep(p) {
+  margin: 0 0 10px;
+}
+
+.message-markdown :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.message-markdown :deep(h1),
+.message-markdown :deep(h2),
+.message-markdown :deep(h3),
+.message-markdown :deep(h4),
+.message-markdown :deep(h5),
+.message-markdown :deep(h6) {
+  margin: 12px 0 8px;
+  line-height: 1.35;
+}
+
+.message-markdown :deep(h1) {
+  font-size: 22px;
+}
+
+.message-markdown :deep(h2) {
+  font-size: 19px;
+}
+
+.message-markdown :deep(h3) {
+  font-size: 17px;
+}
+
+.message-markdown :deep(ul),
+.message-markdown :deep(ol) {
+  margin: 0 0 10px 20px;
+  padding: 0;
+}
+
+.message-markdown :deep(li) {
+  margin: 4px 0;
+}
+
+.message-markdown :deep(a) {
+  color: #409eff;
+  text-decoration: none;
+}
+
+.message-row.user .message-markdown :deep(a) {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.message-markdown :deep(code) {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #f5f7fa;
+  color: #d14;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 0.92em;
+}
+
+.message-row.user .message-markdown :deep(code) {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.message-markdown :deep(pre) {
+  margin: 0 0 10px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #1f2933;
+  overflow-x: auto;
+}
+
+.message-markdown :deep(pre code) {
+  padding: 0;
+  background: transparent;
+  color: #f8fafc;
+}
+
 .tool-card {
   min-width: 260px;
 }
@@ -724,6 +940,107 @@ onMounted(async () => {
   cursor: not-allowed;
 }
 
+.draft-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.draft-dialog {
+  width: min(860px, 100%);
+  max-height: calc(100vh - 48px);
+  background: #fff;
+  border-radius: 8px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.22);
+}
+
+.draft-dialog-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid #ebeef5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.draft-dialog-header h2 {
+  margin: 0;
+  color: #303133;
+  font-size: 20px;
+}
+
+.draft-dialog-header p {
+  margin: 4px 0 0;
+  color: #909399;
+  font-size: 14px;
+}
+
+.draft-state {
+  padding: 48px 22px;
+  color: #909399;
+  text-align: center;
+}
+
+.draft-form {
+  min-height: 0;
+  padding: 20px 22px 18px;
+  overflow-y: auto;
+  display: grid;
+  gap: 14px;
+}
+
+.draft-form label {
+  display: grid;
+  gap: 8px;
+  color: #303133;
+  font-weight: 600;
+}
+
+.draft-form input,
+.draft-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  color: #303133;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.draft-form textarea {
+  resize: vertical;
+}
+
+.draft-form input:focus,
+.draft-form textarea:focus {
+  outline: none;
+  border-color: #409eff;
+}
+
+.draft-error {
+  color: #f56c6c;
+  font-size: 14px;
+}
+
+.draft-actions {
+  position: sticky;
+  bottom: -18px;
+  padding-top: 12px;
+  background: #fff;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 @keyframes typing {
   0%,
   80%,
@@ -754,6 +1071,19 @@ onMounted(async () => {
 
   .message-bubble {
     max-width: 92%;
+  }
+
+  .draft-dialog-backdrop {
+    padding: 12px;
+    align-items: stretch;
+  }
+
+  .draft-dialog {
+    max-height: calc(100vh - 24px);
+  }
+
+  .draft-actions {
+    flex-wrap: wrap;
   }
 }
 </style>
