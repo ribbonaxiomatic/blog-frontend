@@ -13,6 +13,13 @@
 - 将公共布局 `Layout.vue` 恢复为原有结构，只保留“AI助手”导航入口，避免导航布局改动影响已有页面。
 - 将消息 ID 生成从直接调用 `crypto.randomUUID()` 调整为带降级逻辑的本地函数。
 
+## 向量检索优化
+
+- 在 `src/api/article.js` 中新增 `syncArticleVectors` 和 `getArticleVectorStatus`。
+- 在管理员文章管理页增加“查看向量库状态”和“同步文章到向量库”操作。
+- 在 AI 助手页支持展示 `searchArticles` 工具返回的 `articles` 列表，并可点击跳转文章详情。
+- 管理员同步接口用于初始化或修复向量库；日常文章新增、修改、删除已由后端 `ArticleServiceImpl` 自动异步维护向量库。
+
 ## 已接入的后端能力
 
 - `POST /session?n=3`：创建新会话，获取 `sessionId`、助手介绍和示例问题。

@@ -81,6 +81,18 @@
                   >
                     查看文章 #{{ message.toolResult.articleId }}
                   </button>
+                  <div v-if="message.toolResult.articles?.length" class="article-results">
+                    <button
+                      v-for="article in message.toolResult.articles"
+                      :key="article.articleId || article.title"
+                      class="article-result"
+                      @click="goToArticle(article.articleId)"
+                    >
+                      <strong>{{ article.title || '未命名文章' }}</strong>
+                      <span v-if="article.tagName">{{ article.tagName }}</span>
+                      <p>{{ article.summary || '暂无摘要' }}</p>
+                    </button>
+                  </div>
                 </div>
                 <p v-else>{{ message.content }}</p>
               </div>
@@ -590,6 +602,49 @@ onMounted(async () => {
   background: #fff;
   border-radius: 6px;
   cursor: pointer;
+}
+
+.article-results {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.article-result {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  background: #f8f9fb;
+  text-align: left;
+  cursor: pointer;
+}
+
+.article-result:hover {
+  border-color: #409eff;
+  background: #ecf5ff;
+}
+
+.article-result strong {
+  display: block;
+  color: #303133;
+  margin-bottom: 6px;
+}
+
+.article-result span {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #e1f3d8;
+  color: #67c23a;
+  font-size: 12px;
+}
+
+.article-result p {
+  color: #606266;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .typing-row {
