@@ -72,6 +72,11 @@
               placeholder="搜索文章..."
               @keyup.enter="loadArticles"
             />
+            <select v-model="articleStatusFilter" @change="loadArticles">
+              <option value="all">全部状态</option>
+              <option value="published">已发布</option>
+              <option value="draft">草稿</option>
+            </select>
             <button @click="loadArticles">搜索</button>
             <button @click="loadVectorStatus" :disabled="vectorLoading">查看向量库状态</button>
             <button @click="handleSyncVectors" :disabled="vectorSyncing">
@@ -93,12 +98,19 @@
               </tr>
             </thead>
             <tbody>
+              <tr v-if="adminArticles.length === 0">
+                <td colspan="6" class="empty-table">暂无文章</td>
+              </tr>
               <tr v-for="article in adminArticles" :key="article.articleId">
                 <td>{{ article.articleId }}</td>
                 <td>{{ article.title }}</td>
                 <td>{{ article.userId }}</td>
                 <td>{{ article.tagName }}</td>
-                <td>{{ article.status === 1 ? '已发布' : '草稿' }}</td>
+                <td>
+                  <span :class="['status-badge', article.status === 1 ? 'published' : 'draft']">
+                    {{ article.status === 1 ? '已发布' : '草稿' }}
+                  </span>
+                </td>
                 <td>
                   <button @click="deleteArticle(article.articleId)" class="btn-delete">删除</button>
                 </td>
@@ -274,6 +286,7 @@ const adminArticles = ref([])
 const tags = ref([])
 const userSearchQuery = ref('')
 const articleSearchQuery = ref('')
+const articleStatusFilter = ref('all')
 const vectorLoading = ref(false)
 const vectorSyncing = ref(false)
 const vectorStatusMessage = ref('')
@@ -314,18 +327,38 @@ const loadUsers = async () => {
 
 const loadArticles = async () => {
   try {
-    const res = await getArticleList({
-      query: articleSearchQuery.value || undefined,
-      page: 1,
-      pageSize: 100,
-      status: 1,
-    })
-    if (res.code === 1) {
-      adminArticles.value = res.data.rows || []
-    }
+    const statuses = getArticleStatuses()
+    const results = await Promise.all(statuses.map((status) => fetchArticles(status)))
+    adminArticles.value = results
+      .flat()
+      .sort((a, b) => getArticleTime(b) - getArticleTime(a))
   } catch (error) {
     console.error('加载文章失败:', error)
   }
+}
+
+const getArticleStatuses = () => {
+  if (articleStatusFilter.value === 'published') return [1]
+  if (articleStatusFilter.value === 'draft') return [0]
+  return [1, 0]
+}
+
+const fetchArticles = async (status) => {
+  const res = await getArticleList({
+    query: articleSearchQuery.value || undefined,
+    page: 1,
+    pageSize: 100,
+    status,
+  })
+  if (res.code === 1) {
+    return res.data.rows || []
+  }
+  return []
+}
+
+const getArticleTime = (article) => {
+  const value = article.updatedAt || article.publishedAt || article.createdAt || ''
+  return value ? new Date(String(value).replace(' ', 'T')).getTime() : 0
 }
 
 const loadVectorStatus = async () => {
@@ -569,11 +602,18 @@ h2 {
   margin-bottom: 20px;
 }
 
-.toolbar input {
+.toolbar input,
+.toolbar select {
   flex: 1;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
+}
+
+.toolbar select {
+  flex: 0 0 140px;
+  background: #fff;
+  color: #606266;
 }
 
 .toolbar button {
@@ -618,6 +658,29 @@ h2 {
 .data-table th {
   background: #f5f5f5;
   font-weight: 600;
+}
+
+.empty-table {
+  text-align: center;
+  color: #999;
+  padding: 32px 12px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.status-badge.published {
+  background: #f0f9eb;
+  color: #67c23a;
+}
+
+.status-badge.draft {
+  background: #fdf6ec;
+  color: #e6a23c;
 }
 
 .btn-edit,
