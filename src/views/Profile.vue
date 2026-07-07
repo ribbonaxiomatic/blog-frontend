@@ -1160,5 +1160,123 @@ watch(activeTab, (newTab) => {
   border-radius: 4px;
   cursor: pointer;
 }
+
+.profile-container {
+  padding: 42px 0 56px;
+}
+
+.loading,
+.empty-state {
+  color: var(--color-muted);
+}
+
+.profile {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+.profile-header,
+.tabs,
+.article-item {
+  border-color: var(--color-border);
+}
+
+.user-info h2,
+.article-title,
+.user-details h4,
+.modal-content h3,
+.form-group label {
+  color: var(--color-text);
+}
+
+.email,
+.signature,
+.tab,
+.article-meta,
+.user-details p {
+  color: var(--color-muted);
+}
+
+.edit-btn,
+.follow-btn,
+.edit-article-btn,
+.submit-btn,
+.upload-avatar-btn {
+  background: var(--color-primary);
+  border-radius: 999px;
+}
+
+.password-btn,
+.delete-article-btn,
+.unfollow-btn,
+.cancel-btn,
+.status-filter-btn {
+  border-radius: 999px;
+}
+
+.tab.active,
+.article-title:hover,
+.user-details h4:hover {
+  color: var(--color-primary);
+}
+
+.tab.active {
+  border-bottom-color: var(--color-primary);
+}
+
+.status-filter-btn {
+  border-color: var(--color-border);
+  background: var(--color-surface-soft);
+  color: var(--color-muted);
+}
+
+.status-filter-btn:hover,
+.status-filter-btn.active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.article-item {
+  border-radius: 16px;
+  transition: background 0.2s ease;
+}
+
+.article-item:hover,
+.user-item {
+  background: var(--color-surface-soft);
+}
+
+.user-item {
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+}
+
+.user-item:hover {
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface-soft));
+}
+
+.modal-content {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  border-color: var(--color-border);
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+  border-radius: 10px;
+}
+
+.cancel-btn {
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
 </style>
 
