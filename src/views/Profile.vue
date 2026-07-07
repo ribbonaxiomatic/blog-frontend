@@ -64,9 +64,20 @@
 
             <div class="tab-content">
               <div v-if="activeTab === 'articles'" class="articles-list">
+                <div v-if="isOwnProfile" class="article-filter">
+                  <button
+                    v-for="option in articleStatusOptions"
+                    :key="option.value"
+                    @click="setArticleStatusFilter(option.value)"
+                    :class="['status-filter-btn', { active: articleStatusFilter === option.value }]"
+                  >
+                    {{ option.label }}
+                  </button>
+                </div>
+                <div v-if="userArticles.length === 0" class="empty-state">暂无文章</div>
                 <div v-for="article in userArticles" :key="article.articleId" class="article-item">
                   <div class="article-header">
-                    <h3 @click="goToDetail(article.articleId)" class="article-title">
+                    <h3 @click="openArticle(article)" class="article-title">
                       {{ article.title }}
                     </h3>
                     <div v-if="isOwnProfile" class="article-actions">
@@ -82,6 +93,9 @@
                     </div>
                   </div>
                   <div class="article-meta">
+                    <span :class="['status-badge', article.status === 1 ? 'published' : 'draft']">
+                      {{ article.status === 1 ? '已发布' : '草稿' }}
+                    </span>
                     <span>{{ formatDate(article.publishedAt || article.createdAt) }}</span>
                     <span>阅读 {{ article.viewCount || 0 }}</span>
                     <span>点赞 {{ article.likeCount || 0 }}</span>
@@ -260,6 +274,7 @@ const activeTab = ref('articles')
 const showEditModal = ref(false)
 const showPasswordModal = ref(false)
 const userArticles = ref([])
+const articleStatusFilter = ref('all')
 const followers = ref([])
 const following = ref([])
 const isFollowing = ref(false)
@@ -280,6 +295,12 @@ const passwordForm = ref({
   newPassword: '',
   confirmPassword: '',
 })
+
+const articleStatusOptions = [
+  { label: '全部', value: 'all' },
+  { label: '已发布', value: 'published' },
+  { label: '草稿', value: 'draft' },
+]
 
 const loadUser = async () => {
   loading.value = true
@@ -304,18 +325,44 @@ const loadUser = async () => {
 
 const loadUserArticles = async () => {
   try {
-    const res = await getArticleList({
-      userId: userId.value,
-      status: 1,
-      page: 1,
-      pageSize: 20,
-    })
-    if (res.code === 1) {
-      userArticles.value = res.data.rows || []
-    }
+    const statuses = getArticleStatuses()
+    const results = await Promise.all(statuses.map((status) => fetchUserArticles(status)))
+    userArticles.value = results
+      .flat()
+      .sort((a, b) => getArticleTime(b) - getArticleTime(a))
   } catch (error) {
     console.error('加载文章失败:', error)
   }
+}
+
+const getArticleStatuses = () => {
+  if (!isOwnProfile.value) return [1]
+  if (articleStatusFilter.value === 'published') return [1]
+  if (articleStatusFilter.value === 'draft') return [0]
+  return [1, 0]
+}
+
+const fetchUserArticles = async (status) => {
+  const res = await getArticleList({
+    userId: userId.value,
+    status,
+    page: 1,
+    pageSize: 20,
+  })
+  if (res.code === 1) {
+    return res.data.rows || []
+  }
+  return []
+}
+
+const getArticleTime = (article) => {
+  const value = article.updatedAt || article.publishedAt || article.createdAt || ''
+  return value ? new Date(String(value).replace(' ', 'T')).getTime() : 0
+}
+
+const setArticleStatusFilter = (status) => {
+  articleStatusFilter.value = status
+  loadUserArticles()
 }
 
 const loadFollowers = async () => {
@@ -601,6 +648,14 @@ const handleUpdatePassword = async () => {
   }
 }
 
+const openArticle = (article) => {
+  if (isOwnProfile.value && article.status === 0) {
+    editArticle(article.articleId)
+    return
+  }
+  goToDetail(article.articleId)
+}
+
 const goToDetail = (id) => {
   router.push(`/article/${id}`)
 }
@@ -618,6 +673,11 @@ onMounted(() => {
 
 // 监听 userId 变化
 watch(userId, () => {
+  if (!isOwnProfile.value) {
+    articleStatusFilter.value = 'published'
+  } else {
+    articleStatusFilter.value = 'all'
+  }
   loadUser()
   loadUserArticles()
   checkFollowStatus()
@@ -814,6 +874,35 @@ watch(activeTab, (newTab) => {
   border-bottom-color: #409eff;
 }
 
+.article-filter {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.status-filter-btn {
+  padding: 8px 14px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  background: #fff;
+  color: #606266;
+  cursor: pointer;
+}
+
+.status-filter-btn:hover,
+.status-filter-btn.active {
+  border-color: #409eff;
+  color: #409eff;
+  background: #ecf5ff;
+}
+
+.empty-state {
+  padding: 36px 0;
+  text-align: center;
+  color: #999;
+}
+
 .article-item {
   padding: 20px;
   border-bottom: 1px solid #eee;
@@ -877,6 +966,24 @@ watch(activeTab, (newTab) => {
   gap: 15px;
   font-size: 14px;
   color: #999;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.status-badge.published {
+  background: #f0f9eb;
+  color: #67c23a;
+}
+
+.status-badge.draft {
+  background: #fdf6ec;
+  color: #e6a23c;
 }
 
 .users-list {
