@@ -553,7 +553,8 @@ watch(activeTab, (newTab) => {
 <style scoped>
 .admin-container {
   min-height: calc(100vh - 200px);
-  padding: 40px 0;
+  padding: 40px 0 64px;
+  background: var(--color-bg);
 }
 
 .container {
@@ -563,143 +564,211 @@ watch(activeTab, (newTab) => {
 }
 
 h2 {
-  margin-bottom: 30px;
-  color: #333;
+  margin: 0 0 24px;
+  color: var(--color-text);
+  font-size: 30px;
+  letter-spacing: 0;
 }
 
 .admin-tabs {
   display: flex;
-  gap: 10px;
-  margin-bottom: 30px;
-  border-bottom: 1px solid #eee;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+  width: fit-content;
+  box-shadow: var(--shadow-sm);
 }
 
 .tab {
-  padding: 10px 20px;
+  padding: 10px 18px;
   background: none;
   border: none;
-  border-bottom: 2px solid transparent;
+  border-radius: 12px;
   cursor: pointer;
-  color: #666;
-  font-size: 16px;
+  color: var(--color-text-muted);
+  font-size: 15px;
+  font-weight: 800;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .tab.active {
-  color: #409eff;
-  border-bottom-color: #409eff;
+  color: #fff;
+  background: linear-gradient(135deg, var(--color-primary, #4f8ef7), var(--color-accent, #7c5cfc));
+  box-shadow: 0 10px 22px rgba(79, 142, 247, 0.22);
 }
 
 .admin-content {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
 }
 
 .toolbar {
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .toolbar input,
 .toolbar select {
   flex: 1;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  min-width: 180px;
+  padding: 11px 13px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.toolbar input:focus,
+.toolbar select:focus {
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+  box-shadow: 0 0 0 4px rgba(79, 142, 247, 0.12);
 }
 
 .toolbar select {
   flex: 0 0 140px;
-  background: #fff;
-  color: #606266;
 }
 
 .toolbar button {
-  padding: 10px 20px;
-  background: #409eff;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, var(--color-primary, #4f8ef7), var(--color-accent, #7c5cfc));
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 999px;
   cursor: pointer;
+  font-weight: 800;
+  box-shadow: 0 10px 20px rgba(79, 142, 247, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .toolbar button:hover {
-  background: #66b1ff;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px rgba(79, 142, 247, 0.26);
 }
 
 .toolbar button:disabled {
-  background: #c0c4cc;
+  opacity: 0.55;
   cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 .vector-status {
   margin-bottom: 16px;
-  padding: 10px 14px;
-  border-radius: 4px;
-  background: #ecf5ff;
-  color: #409eff;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: rgba(79, 142, 247, 0.10);
+  border: 1px solid rgba(79, 142, 247, 0.20);
+  color: var(--color-primary);
   font-size: 14px;
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
+  color: var(--color-text);
 }
 
 .data-table th,
 .data-table td {
   padding: 12px;
   text-align: left;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
 }
 
 .data-table th {
-  background: #f5f5f5;
-  font-weight: 600;
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.data-table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.data-table tbody tr:hover {
+  background: rgba(79, 142, 247, 0.05);
 }
 
 .empty-table {
   text-align: center;
-  color: #999;
+  color: var(--color-text-muted);
   padding: 32px 12px;
 }
 
 .status-badge {
   display: inline-block;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
   font-size: 12px;
+  font-weight: 800;
 }
 
 .status-badge.published {
-  background: #f0f9eb;
-  color: #67c23a;
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
 }
 
 .status-badge.draft {
-  background: #fdf6ec;
-  color: #e6a23c;
+  background: rgba(245, 158, 11, 0.14);
+  color: #d97706;
 }
 
 .btn-edit,
 .btn-delete {
-  padding: 6px 12px;
+  padding: 7px 12px;
   border: none;
-  border-radius: 4px;
+  border-radius: 999px;
   cursor: pointer;
   margin-right: 5px;
+  font-weight: 800;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-edit:hover,
+.btn-delete:hover {
+  transform: translateY(-1px);
 }
 
 .btn-edit {
-  background: #409eff;
-  color: #fff;
+  background: rgba(79, 142, 247, 0.14);
+  color: var(--color-primary);
 }
 
 .btn-delete {
-  background: #f56c6c;
-  color: #fff;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+:global(.dark) .btn-edit {
+  background: rgba(96, 165, 250, 0.18);
+  color: #93c5fd;
+}
+
+:global(.dark) .btn-delete {
+  background: rgba(248, 113, 113, 0.18);
+  color: #fca5a5;
+}
+
+:global(.dark) .status-badge.published {
+  color: #86efac;
+}
+
+:global(.dark) .status-badge.draft {
+  color: #fcd34d;
 }
 
 .modal {
@@ -708,23 +777,30 @@ h2 {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.58);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 20px;
+  backdrop-filter: blur(8px);
 }
 
 .modal-content {
-  background: #fff;
-  padding: 30px;
-  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: 22px;
   width: 90%;
   max-width: 500px;
+  box-shadow: var(--shadow-lg);
 }
 
 .modal-content h3 {
   margin: 0 0 20px 0;
+  font-size: 22px;
+  letter-spacing: 0;
 }
 
 .form-group {
@@ -734,39 +810,100 @@ h2 {
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  color: #333;
+  color: var(--color-text);
+  font-weight: 800;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 11px 13px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
   box-sizing: border-box;
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(79, 142, 247, 0.12);
+}
+
+.form-group input:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
 }
 
 .form-actions {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .submit-btn {
   padding: 10px 20px;
-  background: #409eff;
+  background: linear-gradient(135deg, var(--color-primary, #4f8ef7), var(--color-accent, #7c5cfc));
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 999px;
   cursor: pointer;
+  font-weight: 800;
 }
 
 .cancel-btn {
   padding: 10px 20px;
-  background: #f5f5f5;
-  color: #333;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
   cursor: pointer;
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .admin-tabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .admin-content {
+    padding: 16px;
+    overflow-x: auto;
+  }
+
+  .data-table {
+    min-width: 760px;
+  }
+}
+
+@media (max-width: 640px) {
+  h2 {
+    font-size: 24px;
+  }
+
+  .toolbar {
+    flex-direction: column;
+  }
+
+  .toolbar input,
+  .toolbar select,
+  .toolbar button {
+    width: 100%;
+    flex: none;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .submit-btn,
+  .cancel-btn {
+    width: 100%;
+  }
 }
 </style>
 

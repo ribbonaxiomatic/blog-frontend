@@ -7,7 +7,7 @@
             <h2>AI 助手</h2>
             <p>博客写作与查询</p>
           </div>
-          <button class="icon-btn primary" title="新建对话" @click="handleCreateSession">
+          <button class="icon-btn primary" title="新建对话" @click="startNewConversation">
             <Plus />
           </button>
         </div>
@@ -18,15 +18,24 @@
           <template v-else>
             <section v-for="group in historyGroups" :key="group.name" class="history-group">
               <h3>{{ group.name }}</h3>
-              <button
+              <div
                 v-for="item in group.items"
                 :key="item.sessionId"
-                :class="['history-item', { active: item.sessionId === sessionId }]"
-                @click="openHistorySession(item.sessionId)"
+                :class="['history-entry', { active: item.sessionId === sessionId }]"
               >
-                <span>{{ item.title || '未命名对话' }}</span>
-                <small>{{ formatTime(item.updateTime) }}</small>
-              </button>
+                <button class="history-item" @click="openHistorySession(item.sessionId)">
+                  <span>{{ item.title || '未命名对话' }}</span>
+                  <small>{{ formatTime(item.updateTime) }}</small>
+                </button>
+                <button
+                  class="history-delete"
+                  title="删除会话"
+                  :disabled="deletingSessionId === item.sessionId"
+                  @click.stop="handleDeleteSession(item)"
+                >
+                  <Delete />
+                </button>
+              </div>
             </section>
           </template>
         </div>
@@ -68,12 +77,20 @@
               :class="['message-row', message.role]"
             >
               <div class="message-bubble">
+                <div
+                  v-if="message.content"
+                  class="message-markdown"
+                  v-html="renderMarkdown(message.content)"
+                ></div>
                 <div v-if="message.toolResult" class="tool-card">
                   <div class="tool-title">
                     <CircleCheck v-if="message.toolResult.success" />
                     <Warning v-else />
                     <span>{{ message.toolResult.message || '工具执行完成' }}</span>
                   </div>
+                  <p v-if="getToolNarration(message.toolResult)" class="tool-narration">
+                    {{ getToolNarration(message.toolResult) }}
+                  </p>
                   <button
                     v-if="message.toolResult.articleId"
                     class="link-btn"
@@ -81,10 +98,10 @@
                   >
                     查看草稿 #{{ message.toolResult.articleId }}
                   </button>
-                  <div v-if="message.toolResult.articles?.length" class="article-results">
+                  <div v-if="getDisplayArticles(message.toolResult.articles).length" class="article-results">
                     <button
-                      v-for="article in message.toolResult.articles"
-                      :key="article.articleId || article.title"
+                      v-for="article in getDisplayArticles(message.toolResult.articles)"
+                      :key="article.articleId"
                       class="article-result"
                       @click="goToArticle(article.articleId)"
                     >
@@ -94,7 +111,6 @@
                     </button>
                   </div>
                 </div>
-                <div v-else class="message-markdown" v-html="renderMarkdown(message.content)"></div>
               </div>
             </article>
 
@@ -173,12 +189,14 @@
 <script setup>
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { CircleCheck, Plus, Promotion, VideoPause, Warning } from '@element-plus/icons-vue'
+import { CircleCheck, Delete, Plus, Promotion, VideoPause, Warning } from '@element-plus/icons-vue'
 import Layout from '@/components/Layout.vue'
 import { getArticleById, updateArticle } from '@/api/article'
 import { renderMarkdown } from '@/utils/markdown'
 import {
   createSession,
+  deleteHistorySession,
+  getHotExamples,
   getHistorySessions,
   getSessionMessages,
   stopChat,
@@ -195,6 +213,7 @@ const question = ref('')
 const history = ref({})
 const historyLoading = ref(false)
 const sessionLoading = ref(false)
+const deletingSessionId = ref('')
 const streaming = ref(false)
 const messageListRef = ref(null)
 const activeController = ref(null)
@@ -212,31 +231,51 @@ const draftForm = ref({
 })
 
 const canSend = computed(() => {
-  return question.value.trim() && sessionId.value && !streaming.value && !sessionLoading.value
+  return question.value.trim() && !streaming.value && !sessionLoading.value
 })
 
 const historyGroups = computed(() => {
-  return Object.entries(history.value || {}).map(([name, items]) => ({
-    name,
-    items: Array.isArray(items) ? items : [],
-  }))
+  return Object.entries(history.value || {})
+    .map(([name, items]) => {
+      const sortedItems = Array.isArray(items)
+        ? [...items].sort((a, b) => getTimeValue(b.updateTime) - getTimeValue(a.updateTime))
+        : []
+      return {
+        name,
+        items: sortedItems,
+        latestTime: sortedItems.length ? getTimeValue(sortedItems[0].updateTime) : 0,
+      }
+    })
+    .filter((group) => group.items.length > 0)
+    .sort((a, b) => b.latestTime - a.latestTime)
 })
 
-const handleCreateSession = async () => {
-  sessionLoading.value = true
+const startNewConversation = async () => {
+  if (streaming.value) return
+  sessionId.value = ''
   messages.value = []
+  await loadExamples()
+  scrollToBottom()
+}
+
+const ensureSession = async () => {
+  if (sessionId.value) {
+    return sessionId.value
+  }
+
+  sessionLoading.value = true
   try {
     const res = await createSession(3)
     if (res.code === 1) {
       assistantInfo.value = res.data || {}
       sessionId.value = res.data.sessionId
       examples.value = res.data.examples || []
-      await loadHistory()
+      return sessionId.value
     }
   } finally {
     sessionLoading.value = false
-    scrollToBottom()
   }
+  return ''
 }
 
 const loadHistory = async () => {
@@ -248,6 +287,17 @@ const loadHistory = async () => {
     }
   } finally {
     historyLoading.value = false
+  }
+}
+
+const loadExamples = async () => {
+  try {
+    const res = await getHotExamples(3)
+    if (res.code === 1) {
+      examples.value = res.data || []
+    }
+  } catch (error) {
+    examples.value = []
   }
 }
 
@@ -273,6 +323,22 @@ const openHistorySession = async (targetSessionId) => {
   }
 }
 
+const handleDeleteSession = async (item) => {
+  if (!item?.sessionId || deletingSessionId.value) return
+  if (!confirm(`确定删除「${item.title || '未命名对话'}」吗？`)) return
+
+  deletingSessionId.value = item.sessionId
+  try {
+    await deleteHistorySession(item.sessionId)
+    await loadHistory()
+    if (item.sessionId === sessionId.value) {
+      await startNewConversation()
+    }
+  } finally {
+    deletingSessionId.value = ''
+  }
+}
+
 const useExample = (example) => {
   question.value = example.describe || example.title || ''
   sendQuestion()
@@ -280,7 +346,10 @@ const useExample = (example) => {
 
 const sendQuestion = async () => {
   const text = question.value.trim()
-  if (!text || !sessionId.value || streaming.value) return
+  if (!text || streaming.value) return
+
+  const activeSessionId = await ensureSession()
+  if (!activeSessionId) return
 
   messages.value.push({
     id: createMessageId(),
@@ -303,7 +372,7 @@ const sendQuestion = async () => {
   try {
     await streamChat({
       question: text,
-      sessionId: sessionId.value,
+      sessionId: activeSessionId,
       signal: activeController.value.signal,
       onEvent: (event) => {
         handleChatEvent(event, assistantMessage)
@@ -354,7 +423,33 @@ const handleStop = async () => {
 }
 
 const goToArticle = (articleId) => {
+  if (!articleId) return
   router.push(`/article/${articleId}`)
+}
+
+const getDisplayArticles = (articles = []) => {
+  const seen = new Set()
+  return articles.filter((article) => {
+    const articleId = article?.articleId
+    if (!articleId || seen.has(articleId)) return false
+    seen.add(articleId)
+    return true
+  })
+}
+
+const getToolNarration = (toolResult) => {
+  if (!toolResult) return ''
+  const articles = getDisplayArticles(toolResult.articles || [])
+  if (articles.length > 0) {
+    return `我找到了 ${articles.length} 篇相关博客，你可以先看摘要，点击卡片进入文章详情。`
+  }
+  if (toolResult.articleId) {
+    return '草稿已经准备好，可以先检查内容，再选择修改并发布。'
+  }
+  if (toolResult.success === false) {
+    return '这次没有拿到可展示的结果，可以换一个更具体的关键词再试。'
+  }
+  return ''
 }
 
 const openDraftDialog = async (articleId) => {
@@ -443,6 +538,11 @@ const formatTime = (value) => {
   return String(value).replace('T', ' ').slice(0, 16)
 }
 
+const getTimeValue = (value) => {
+  if (!value) return 0
+  return new Date(String(value).replace(' ', 'T')).getTime() || 0
+}
+
 const createMessageId = () => {
   if (globalThis.crypto?.randomUUID) {
     return globalThis.crypto.randomUUID()
@@ -461,7 +561,7 @@ const scrollToBottom = () => {
 
 onMounted(async () => {
   await loadHistory()
-  await handleCreateSession()
+  await loadExamples()
 })
 </script>
 
@@ -559,24 +659,36 @@ onMounted(async () => {
   font-weight: 600;
 }
 
-.history-item {
+.history-entry {
   width: 100%;
-  padding: 10px 12px;
-  border: none;
   border-radius: 8px;
+  background: transparent;
+  color: #303133;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.history-entry:hover,
+.history-entry.active {
+  background: #ecf5ff;
+  color: #409eff;
+}
+
+.history-item {
+  min-width: 0;
+  flex: 1;
+  padding: 8px 10px;
+  border: none;
   background: transparent;
   text-align: left;
   cursor: pointer;
-  color: #303133;
+  color: inherit;
   display: flex;
   flex-direction: column;
   gap: 2px;
-}
-
-.history-item:hover,
-.history-item.active {
-  background: #ecf5ff;
-  color: #409eff;
 }
 
 .history-item span {
@@ -587,6 +699,43 @@ onMounted(async () => {
 
 .history-item small {
   color: #a8abb2;
+}
+
+.history-delete {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #a8abb2;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.history-delete svg {
+  width: 15px;
+  height: 15px;
+}
+
+.history-entry:hover .history-delete,
+.history-entry.active .history-delete,
+.history-delete:focus-visible {
+  opacity: 1;
+}
+
+.history-delete:hover {
+  background: #fef0f0;
+  color: #f56c6c;
+}
+
+.history-delete:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .chat-panel {
@@ -796,6 +945,7 @@ onMounted(async () => {
 
 .tool-card {
   min-width: 260px;
+  margin-top: 10px;
 }
 
 .tool-title {
@@ -808,6 +958,13 @@ onMounted(async () => {
 .tool-title svg {
   width: 18px;
   height: 18px;
+}
+
+.tool-narration {
+  margin: 8px 0 0;
+  color: #606266;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .link-btn {

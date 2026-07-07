@@ -214,54 +214,70 @@ onMounted(() => {
 <style scoped>
 .article-edit-container {
   min-height: calc(100vh - 200px);
-  padding: 40px 0;
+  padding: 48px 0 72px;
+  background:
+    linear-gradient(180deg, rgba(79, 142, 247, 0.08), transparent 320px),
+    var(--color-bg);
 }
 
 .container {
-  max-width: 900px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 0 20px;
 }
 
 .edit-box {
-  background: #fff;
-  border-radius: 8px;
-  padding: 40px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  padding: 36px;
+  box-shadow: var(--shadow-lg);
 }
 
 h2 {
-  margin-bottom: 30px;
-  color: #333;
+  margin: 0 0 30px;
+  color: var(--color-text);
+  font-size: 30px;
+  letter-spacing: 0;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  color: #333;
-  font-weight: 500;
+  color: var(--color-text);
+  font-weight: 800;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 13px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
   font-size: 14px;
   box-sizing: border-box;
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.form-group textarea {
+  line-height: 1.75;
+  resize: vertical;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #409eff;
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+  box-shadow: 0 0 0 4px rgba(79, 142, 247, 0.14);
 }
 
 .upload-area {
@@ -271,24 +287,31 @@ h2 {
 }
 
 .upload-btn {
-  padding: 10px 20px;
-  background: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 10px 18px;
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
   cursor: pointer;
   width: fit-content;
+  font-weight: 700;
+  transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .upload-btn:hover {
-  background: #e6e6e6;
+  transform: translateY(-1px);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .preview {
   position: relative;
-  width: 200px;
-  height: 150px;
-  border-radius: 4px;
+  width: min(260px, 100%);
+  aspect-ratio: 16 / 10;
+  border-radius: 16px;
   overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-soft);
 }
 
 .preview img {
@@ -299,61 +322,94 @@ h2 {
 
 .remove-btn {
   position: absolute;
-  top: 5px;
-  right: 5px;
-  padding: 5px 10px;
+  top: 10px;
+  right: 10px;
+  padding: 6px 12px;
   background: rgba(0, 0, 0, 0.6);
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 999px;
   cursor: pointer;
 }
 
 .error-message {
-  color: #f56c6c;
+  color: #ef4444;
   font-size: 14px;
   margin-bottom: 15px;
 }
 
 .actions {
   display: flex;
-  gap: 15px;
-  margin-top: 30px;
+  gap: 12px;
+  margin-top: 32px;
+  flex-wrap: wrap;
 }
 
 .submit-btn {
   padding: 12px 24px;
-  background: #409eff;
+  background: var(--gradient-primary);
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 999px;
   font-size: 16px;
+  font-weight: 800;
   cursor: pointer;
-  transition: background 0.3s;
+  box-shadow: 0 14px 28px rgba(79, 142, 247, 0.22);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: #66b1ff;
+  transform: translateY(-1px);
+  box-shadow: 0 18px 34px rgba(79, 142, 247, 0.30);
 }
 
 .submit-btn:disabled {
-  background: #c0c4cc;
+  opacity: 0.58;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .cancel-btn {
   padding: 12px 24px;
-  background: #f5f5f5;
-  color: #333;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
   text-decoration: none;
   display: inline-block;
-  transition: background 0.3s;
+  font-weight: 800;
+  transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
 .cancel-btn:hover {
-  background: #e6e6e6;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 720px) {
+  .article-edit-container {
+    padding: 28px 0 48px;
+  }
+
+  .edit-box {
+    padding: 24px 18px;
+    border-radius: 18px;
+  }
+
+  h2 {
+    font-size: 24px;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .submit-btn,
+  .cancel-btn {
+    width: 100%;
+    text-align: center;
+  }
 }
 </style>
 
