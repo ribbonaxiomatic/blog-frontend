@@ -1,34 +1,43 @@
 <template>
   <Layout>
-    <div class="favorites-container">
-      <div class="container">
-        <h2>我的收藏</h2>
+    <div class="favorites-page">
+      <section class="favorites-hero">
+        <span>Favorites</span>
+        <h1>我的收藏</h1>
+        <p>把值得反复阅读的文章留在这里，形成自己的技术资料库。</p>
+      </section>
+
+      <section class="favorites-panel">
         <div v-if="loading" class="loading">加载中...</div>
         <div v-else-if="articles.length === 0" class="empty">暂无收藏</div>
         <div v-else class="articles-list">
           <article v-for="article in articles" :key="article.articleId" class="article-card">
-            <div v-if="article.coverImage" class="cover-image">
-              <img :src="article.coverImage" alt="cover" />
+            <div class="cover-image" :style="getCoverStyle(article)">
+              <img v-if="article.coverImage" :src="article.coverImage" alt="cover" />
+              <span v-else>{{ article.tagName || '收藏' }}</span>
             </div>
             <div class="article-content">
               <div class="article-header">
-                <h3 @click="goToDetail(article.articleId)" class="title">
-                  {{ article.title }}
-                </h3>
+                <div>
+                  <span class="tag">{{ article.tagName || '技术笔记' }}</span>
+                  <h3 @click="goToDetail(article.articleId)" class="title">
+                    {{ article.title || '未命名文章' }}
+                  </h3>
+                </div>
                 <button @click="removeFavorite(article.articleId)" class="remove-btn" title="取消收藏">
                   取消收藏
                 </button>
               </div>
-              <p class="summary">{{ article.summary || article.content?.substring(0, 100) }}</p>
+              <p class="summary">{{ getSummary(article) }}</p>
               <div class="meta">
-                <span class="tag">{{ article.tagName }}</span>
-                <span class="date">{{ formatDate(article.publishedAt || article.createdAt) }}</span>
-                <span class="views">阅读 {{ article.viewCount || 0 }}</span>
-                <span class="likes">点赞 {{ article.likeCount || 0 }}</span>
+                <span>{{ formatDate(article.publishedAt || article.createdAt) }}</span>
+                <span>阅读 {{ article.viewCount || 0 }}</span>
+                <span>点赞 {{ article.likeCount || 0 }}</span>
               </div>
             </div>
           </article>
         </div>
+
         <div v-if="total > pageSize" class="pagination">
           <button @click="prevPage" :disabled="currentPage === 1">上一页</button>
           <span>第 {{ currentPage }} 页，共 {{ Math.ceil(total / pageSize) }} 页</span>
@@ -36,7 +45,7 @@
             下一页
           </button>
         </div>
-      </div>
+      </section>
     </div>
   </Layout>
 </template>
@@ -96,20 +105,17 @@ const goToDetail = (id) => {
   router.push(`/article/${id}`)
 }
 
-// 取消收藏
 const removeFavorite = async (articleId) => {
   if (!confirm('确定要取消收藏这篇文章吗？')) {
     return
   }
   try {
     const res = await toggleArticleFavorite({
-      articleId: articleId,
+      articleId,
       userId: userStore.userInfo.userId,
     })
     if (res.code === 1) {
-      // 重新获取收藏列表，确保数据一致性
       await loadFavorites()
-      // 如果当前页没有数据了，且不是第一页，跳转到上一页
       if (articles.value.length === 0 && currentPage.value > 1) {
         currentPage.value--
         await loadFavorites()
@@ -123,7 +129,26 @@ const removeFavorite = async (articleId) => {
 
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
-  return dateStr.split(' ')[0]
+  return String(dateStr).split(' ')[0]
+}
+
+const getSummary = (article) => {
+  return (article.summary || article.content || '')
+    .replace(/[#>*_`[\]()]/g, '')
+    .replace(/\s+/g, ' ')
+    .slice(0, 130) || '这篇文章还没有摘要。'
+}
+
+const getCoverStyle = (article) => {
+  if (article.coverImage) return {}
+  const seed = Number(article.articleId || article.userId || 1)
+  const gradients = [
+    'linear-gradient(135deg, #4f8ef7, #7c5cfc)',
+    'linear-gradient(135deg, #06b6d4, #3b82f6)',
+    'linear-gradient(135deg, #22c55e, #14b8a6)',
+    'linear-gradient(135deg, #f97316, #ec4899)',
+  ]
+  return { background: gradients[seed % gradients.length] }
 }
 
 onMounted(() => {
@@ -132,45 +157,87 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.favorites-container {
-  min-height: calc(100vh - 200px);
-  padding: 40px 0;
-}
-
-.container {
-  max-width: 1200px;
+.favorites-page {
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 42px 20px 56px;
 }
 
-h2 {
-  margin-bottom: 30px;
-  color: #333;
+.favorites-hero,
+.favorites-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+.favorites-hero {
+  margin-bottom: 24px;
+  padding: 36px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 16%, transparent), color-mix(in srgb, var(--color-accent) 14%, transparent)),
+    var(--color-surface);
+}
+
+.favorites-hero span {
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.favorites-hero h1 {
+  margin: 6px 0 8px;
+  color: var(--color-text);
+  font-size: clamp(30px, 4vw, 46px);
+}
+
+.favorites-hero p {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.favorites-panel {
+  padding: 24px;
 }
 
 .loading,
 .empty {
   text-align: center;
-  padding: 40px;
-  color: #999;
+  padding: 48px;
+  color: var(--color-muted);
+}
+
+.articles-list {
+  display: grid;
+  gap: 18px;
 }
 
 .article-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 18px;
+  padding: 18px;
+  background: var(--color-surface-soft);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.article-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
 }
 
 .cover-image {
-  width: 200px;
-  height: 150px;
-  flex-shrink: 0;
-  border-radius: 4px;
+  height: 145px;
+  border-radius: 16px;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 800;
 }
 
 .cover-image img {
@@ -180,97 +247,109 @@ h2 {
 }
 
 .article-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  min-width: 0;
 }
 
 .article-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 15px;
+  gap: 16px;
   margin-bottom: 10px;
 }
 
+.tag {
+  display: inline-flex;
+  margin-bottom: 8px;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .title {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
   margin: 0;
-  color: #333;
+  color: var(--color-text);
   cursor: pointer;
-  transition: color 0.3s;
-  flex: 1;
+  line-height: 1.35;
 }
 
 .title:hover {
-  color: #409eff;
+  color: var(--color-primary);
 }
 
 .remove-btn {
-  padding: 6px 12px;
-  background: #f56c6c;
-  color: #fff;
+  padding: 8px 12px;
+  background: color-mix(in srgb, #f56c6c 14%, transparent);
+  color: #f56c6c;
   border: none;
-  border-radius: 4px;
+  border-radius: 999px;
   cursor: pointer;
   font-size: 14px;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.remove-btn:hover {
-  background: #f78989;
-}
-
 .summary {
-  color: #666;
-  line-height: 1.6;
-  margin: 0 0 15px 0;
-  flex: 1;
+  color: var(--color-muted);
+  line-height: 1.7;
+  margin: 0 0 15px;
 }
 
 .meta {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 14px;
+  flex-wrap: wrap;
   font-size: 14px;
-  color: #999;
-}
-
-.tag {
-  background: #ecf5ff;
-  color: #409eff;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
+  color: var(--color-muted);
 }
 
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 20px;
-  margin-top: 30px;
-  padding: 20px;
+  gap: 18px;
+  margin-top: 28px;
+  color: var(--color-muted);
+  flex-wrap: wrap;
 }
 
 .pagination button {
   padding: 8px 16px;
-  background: #409eff;
+  background: var(--color-primary);
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 999px;
   cursor: pointer;
 }
 
 .pagination button:disabled {
-  background: #c0c4cc;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-.pagination button:hover:not(:disabled) {
-  background: #66b1ff;
+@media (max-width: 760px) {
+  .favorites-page {
+    padding: 22px 12px 40px;
+  }
+
+  .favorites-hero,
+  .favorites-panel {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .article-card {
+    grid-template-columns: 1fr;
+  }
+
+  .cover-image {
+    height: 170px;
+  }
 }
 </style>
-
