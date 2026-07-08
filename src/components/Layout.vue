@@ -110,19 +110,17 @@ onMounted(() => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background:
-    radial-gradient(circle at 8% 0%, rgba(79, 142, 247, 0.12), transparent 28%),
-    radial-gradient(circle at 88% 6%, rgba(124, 92, 252, 0.10), transparent 30%),
-    var(--color-bg);
+  background: var(--gradient-page);
 }
 
 .header {
-  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 86%, transparent);
   border-bottom: 1px solid var(--color-border);
   backdrop-filter: blur(18px);
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: var(--shadow-sm);
 }
 
 .container {
@@ -150,8 +148,8 @@ onMounted(() => {
 .logo-mark {
   width: 38px;
   height: 38px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  border-radius: var(--radius-md);
+  background: var(--gradient-primary);
   color: #fff;
   display: inline-flex;
   align-items: center;
@@ -190,6 +188,7 @@ onMounted(() => {
   align-items: center;
   gap: 5px;
   font-size: 14px;
+  border: 1px solid transparent;
 }
 
 .nav-item svg,
@@ -202,11 +201,13 @@ onMounted(() => {
 .nav-item:hover {
   background: var(--color-surface-soft);
   color: var(--color-primary);
+  border-color: var(--color-border);
 }
 
 .nav-item.router-link-active {
   color: var(--color-primary);
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 22%, transparent);
 }
 
 .write-btn,
@@ -223,7 +224,7 @@ onMounted(() => {
 .write-btn {
   gap: 6px;
   padding: 0 14px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  background: var(--gradient-primary);
   color: #fff;
   text-decoration: none;
   font-size: 14px;
@@ -234,6 +235,17 @@ onMounted(() => {
   width: 36px;
   background: var(--color-surface-soft);
   color: var(--color-muted);
+  border: 1px solid var(--color-border);
+}
+
+.write-btn:hover,
+.theme-btn:hover {
+  transform: translateY(-1px);
+}
+
+.theme-btn:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .user-info {
@@ -248,6 +260,7 @@ onMounted(() => {
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid var(--color-border);
 }
 
 .username {
@@ -266,7 +279,8 @@ onMounted(() => {
 }
 
 .logout-btn:hover {
-  background: #f78989;
+  background: color-mix(in srgb, #f56c6c 22%, transparent);
+  transform: translateY(-1px);
 }
 
 .main {
@@ -274,7 +288,7 @@ onMounted(() => {
 }
 
 .footer {
-  background: var(--color-surface);
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
   border-top: 1px solid var(--color-border);
   padding: 20px 0;
   text-align: center;
@@ -291,6 +305,13 @@ onMounted(() => {
 
   .nav {
     justify-content: flex-start;
+    width: 100%;
+  }
+
+  .user-info {
+    width: 100%;
+    margin-left: 0;
+    padding-top: 4px;
   }
 }
 </style>

@@ -696,6 +696,7 @@ watch(activeTab, (newTab) => {
 .profile-container {
   min-height: calc(100vh - 200px);
   padding: 40px 0;
+  background: var(--color-bg);
 }
 
 .container {
@@ -707,14 +708,15 @@ watch(activeTab, (newTab) => {
 .loading {
   text-align: center;
   padding: 40px;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .profile {
-  background: #fff;
-  border-radius: 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
   padding: 40px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 .profile-header {
@@ -722,7 +724,7 @@ watch(activeTab, (newTab) => {
   align-items: center;
   gap: 30px;
   padding-bottom: 30px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
   margin-bottom: 30px;
 }
 
@@ -737,6 +739,7 @@ watch(activeTab, (newTab) => {
   border-radius: 50%;
   object-fit: cover;
   display: block;
+  border: 3px solid var(--color-surface-soft);
 }
 
 .avatar-overlay {
@@ -764,7 +767,7 @@ watch(activeTab, (newTab) => {
 }
 
 .avatar-upload-btn {
-  background: rgba(255, 255, 255, 0.9);
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
   border: none;
   border-radius: 50%;
   width: 40px;
@@ -778,7 +781,7 @@ watch(activeTab, (newTab) => {
 }
 
 .avatar-upload-btn:hover {
-  background: #fff;
+  background: var(--color-surface);
   transform: scale(1.1);
 }
 
@@ -788,22 +791,22 @@ watch(activeTab, (newTab) => {
 
 .user-info h2 {
   margin: 0 0 10px 0;
-  color: #333;
+  color: var(--color-text);
 }
 
 .email {
-  color: #999;
+  color: var(--color-text-muted);
   margin: 0 0 10px 0;
 }
 
 .signature {
-  color: #666;
+  color: var(--color-muted);
   margin: 0;
 }
 
 .edit-btn {
   padding: 10px 20px;
-  background: #409eff;
+  background: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -811,12 +814,12 @@ watch(activeTab, (newTab) => {
 }
 
 .edit-btn:hover {
-  background: #66b1ff;
+  background: color-mix(in srgb, var(--color-primary) 82%, white);
 }
 
 .password-btn {
   padding: 10px 20px;
-  background: #67c23a;
+  background: var(--color-success);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -826,12 +829,12 @@ watch(activeTab, (newTab) => {
 }
 
 .password-btn:hover {
-  background: #85ce61;
+  background: color-mix(in srgb, var(--color-success) 86%, white);
 }
 
 .follow-btn {
   padding: 10px 20px;
-  background: #409eff;
+  background: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -840,22 +843,22 @@ watch(activeTab, (newTab) => {
 }
 
 .follow-btn:hover {
-  background: #66b1ff;
+  background: color-mix(in srgb, var(--color-primary) 82%, white);
 }
 
 .follow-btn.following {
-  background: #909399;
+  background: var(--color-text-muted);
 }
 
 .follow-btn.following:hover {
-  background: #a6a9ad;
+  background: var(--color-muted);
 }
 
 .tabs {
   display: flex;
   gap: 10px;
   margin-bottom: 30px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .tab {
@@ -864,18 +867,18 @@ watch(activeTab, (newTab) => {
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
-  color: #666;
+  color: var(--color-muted);
   font-size: 16px;
 }
 
 .tab.active {
-  color: #409eff;
-  border-bottom-color: #409eff;
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
 }
 
 .article-item {
   padding: 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .article-header {
@@ -887,20 +890,20 @@ watch(activeTab, (newTab) => {
 
 .article-title {
   font-size: 18px;
-  color: #333;
+  color: var(--color-text);
   cursor: pointer;
   margin: 0;
   flex: 1;
 }
 
 .article-title:hover {
-  color: #409eff;
+  color: var(--color-primary);
 }
 
 .empty-drafts {
   text-align: center;
   padding: 60px 20px;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .empty-drafts p {
@@ -910,7 +913,7 @@ watch(activeTab, (newTab) => {
 
 .write-btn {
   padding: 8px 20px;
-  background: #409eff;
+  background: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -919,11 +922,11 @@ watch(activeTab, (newTab) => {
 }
 
 .write-btn:hover {
-  background: #66b1ff;
+  background: color-mix(in srgb, var(--color-primary) 82%, white);
 }
 
 .draft-item {
-  border-left: 3px solid #e6a23c;
+  border-left: 3px solid var(--color-warning);
 }
 
 .article-actions {
@@ -933,7 +936,7 @@ watch(activeTab, (newTab) => {
 
 .edit-article-btn {
   padding: 6px 12px;
-  background: #409eff;
+  background: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -942,12 +945,12 @@ watch(activeTab, (newTab) => {
 }
 
 .edit-article-btn:hover {
-  background: #66b1ff;
+  background: color-mix(in srgb, var(--color-primary) 82%, white);
 }
 
 .delete-article-btn {
   padding: 6px 12px;
-  background: #f56c6c;
+  background: var(--color-danger);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -957,14 +960,14 @@ watch(activeTab, (newTab) => {
 }
 
 .delete-article-btn:hover {
-  background: #f78989;
+  background: color-mix(in srgb, var(--color-danger) 86%, white);
 }
 
 .article-meta {
   display: flex;
   gap: 15px;
   font-size: 14px;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .users-list {
@@ -978,13 +981,14 @@ watch(activeTab, (newTab) => {
   align-items: center;
   gap: 15px;
   padding: 15px;
-  background: #f5f5f5;
+  background: var(--color-surface-soft);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   transition: background 0.3s;
 }
 
 .user-item:hover {
-  background: #ebebeb;
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface-soft));
 }
 
 .user-avatar {
@@ -1001,17 +1005,17 @@ watch(activeTab, (newTab) => {
 
 .user-details h4 {
   margin: 0 0 5px 0;
-  color: #333;
+  color: var(--color-text);
   cursor: pointer;
 }
 
 .user-details h4:hover {
-  color: #409eff;
+  color: var(--color-primary);
 }
 
 .user-details p {
   margin: 0;
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 14px;
 }
 
@@ -1022,7 +1026,7 @@ watch(activeTab, (newTab) => {
 
 .unfollow-btn {
   padding: 6px 12px;
-  background: #909399;
+  background: var(--color-text-muted);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -1031,7 +1035,7 @@ watch(activeTab, (newTab) => {
 }
 
 .unfollow-btn:hover {
-  background: #a6a9ad;
+  background: var(--color-muted);
 }
 
 .modal {
@@ -1040,19 +1044,24 @@ watch(activeTab, (newTab) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.58);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 20px;
+  backdrop-filter: blur(8px);
 }
 
 .modal-content {
-  background: #fff;
+  background: var(--color-surface);
+  color: var(--color-text);
   padding: 30px;
-  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
   width: 90%;
   max-width: 500px;
+  box-shadow: var(--shadow-lg);
 }
 
 .modal-content h3 {
@@ -1066,7 +1075,7 @@ watch(activeTab, (newTab) => {
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  color: #333;
+  color: var(--color-text);
 }
 
 .form-group input,
@@ -1074,9 +1083,19 @@ watch(activeTab, (newTab) => {
 .form-group textarea {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   box-sizing: border-box;
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 14%, transparent);
 }
 
 .avatar-upload-section {
@@ -1090,7 +1109,7 @@ watch(activeTab, (newTab) => {
   height: 80px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #ddd;
+  border: 2px solid var(--color-border);
 }
 
 .avatar-upload-controls {
@@ -1101,7 +1120,7 @@ watch(activeTab, (newTab) => {
 
 .upload-avatar-btn {
   padding: 8px 16px;
-  background: #409eff;
+  background: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -1110,11 +1129,11 @@ watch(activeTab, (newTab) => {
 }
 
 .upload-avatar-btn:hover {
-  background: #66b1ff;
+  background: color-mix(in srgb, var(--color-primary) 82%, white);
 }
 
 .upload-status {
-  color: #409eff;
+  color: var(--color-primary);
   font-size: 12px;
 }
 
@@ -1126,7 +1145,7 @@ watch(activeTab, (newTab) => {
 
 .submit-btn {
   padding: 10px 20px;
-  background: #409eff;
+  background: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -1135,9 +1154,9 @@ watch(activeTab, (newTab) => {
 
 .cancel-btn {
   padding: 10px 20px;
-  background: #f5f5f5;
-  color: #333;
-  border: 1px solid #ddd;
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   cursor: pointer;
 }

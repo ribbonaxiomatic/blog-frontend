@@ -51,3 +51,17 @@ export const publishArticle = (articleId) => {
     data: { articleId, status: 1 },
   })
 }
+
+export const getArticleVectorStatus = () => {
+  return request({
+    url: '/articles/vector-status',
+    method: 'get',
+  })
+}
+
+export const syncArticleVectors = () => {
+  return request({
+    url: '/articles/sync-vectors',
+    method: 'post',
+  })
+}
