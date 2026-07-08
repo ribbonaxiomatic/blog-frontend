@@ -71,20 +71,9 @@
 
             <div class="tab-content">
               <div v-if="activeTab === 'articles'" class="articles-list">
-                <div v-if="isOwnProfile" class="article-filter">
-                  <button
-                    v-for="option in articleStatusOptions"
-                    :key="option.value"
-                    @click="setArticleStatusFilter(option.value)"
-                    :class="['status-filter-btn', { active: articleStatusFilter === option.value }]"
-                  >
-                    {{ option.label }}
-                  </button>
-                </div>
-                <div v-if="userArticles.length === 0" class="empty-state">暂无文章</div>
                 <div v-for="article in userArticles" :key="article.articleId" class="article-item">
                   <div class="article-header">
-                    <h3 @click="openArticle(article)" class="article-title">
+                    <h3 @click="goToDetail(article.articleId)" class="article-title">
                       {{ article.title }}
                     </h3>
                     <div v-if="isOwnProfile" class="article-actions">
@@ -100,9 +89,6 @@
                     </div>
                   </div>
                   <div class="article-meta">
-                    <span :class="['status-badge', article.status === 1 ? 'published' : 'draft']">
-                      {{ article.status === 1 ? '已发布' : '草稿' }}
-                    </span>
                     <span>{{ formatDate(article.publishedAt || article.createdAt) }}</span>
                     <span>阅读 {{ article.viewCount || 0 }}</span>
                     <span>点赞 {{ article.likeCount || 0 }}</span>
@@ -310,7 +296,6 @@ const activeTab = ref('articles')
 const showEditModal = ref(false)
 const showPasswordModal = ref(false)
 const userArticles = ref([])
-const articleStatusFilter = ref('all')
 const draftArticles = ref([])
 const draftLoading = ref(false)
 const followers = ref([])
@@ -333,12 +318,6 @@ const passwordForm = ref({
   newPassword: '',
   confirmPassword: '',
 })
-
-const articleStatusOptions = [
-  { label: '全部', value: 'all' },
-  { label: '已发布', value: 'published' },
-  { label: '草稿', value: 'draft' },
-]
 
 const loadUser = async () => {
   loading.value = true
@@ -363,44 +342,18 @@ const loadUser = async () => {
 
 const loadUserArticles = async () => {
   try {
-    const statuses = getArticleStatuses()
-    const results = await Promise.all(statuses.map((status) => fetchUserArticles(status)))
-    userArticles.value = results
-      .flat()
-      .sort((a, b) => getArticleTime(b) - getArticleTime(a))
+    const res = await getArticleList({
+      userId: userId.value,
+      status: 1,
+      page: 1,
+      pageSize: 20,
+    })
+    if (res.code === 1) {
+      userArticles.value = res.data.rows || []
+    }
   } catch (error) {
     console.error('加载文章失败:', error)
   }
-}
-
-const getArticleStatuses = () => {
-  if (!isOwnProfile.value) return [1]
-  if (articleStatusFilter.value === 'published') return [1]
-  if (articleStatusFilter.value === 'draft') return [0]
-  return [1, 0]
-}
-
-const fetchUserArticles = async (status) => {
-  const res = await getArticleList({
-    userId: userId.value,
-    status,
-    page: 1,
-    pageSize: 20,
-  })
-  if (res.code === 1) {
-    return res.data.rows || []
-  }
-  return []
-}
-
-const getArticleTime = (article) => {
-  const value = article.updatedAt || article.publishedAt || article.createdAt || ''
-  return value ? new Date(String(value).replace(' ', 'T')).getTime() : 0
-}
-
-const setArticleStatusFilter = (status) => {
-  articleStatusFilter.value = status
-  loadUserArticles()
 }
 
 const loadDrafts = async () => {
@@ -705,14 +658,6 @@ const handleUpdatePassword = async () => {
   }
 }
 
-const openArticle = (article) => {
-  if (isOwnProfile.value && article.status === 0) {
-    editArticle(article.articleId)
-    return
-  }
-  goToDetail(article.articleId)
-}
-
 const goToDetail = (id) => {
   router.push(`/article/${id}`)
 }
@@ -730,11 +675,6 @@ onMounted(() => {
 
 // 监听 userId 变化
 watch(userId, () => {
-  if (!isOwnProfile.value) {
-    articleStatusFilter.value = 'published'
-  } else {
-    articleStatusFilter.value = 'all'
-  }
   loadUser()
   loadUserArticles()
   checkFollowStatus()
@@ -933,35 +873,6 @@ watch(activeTab, (newTab) => {
   border-bottom-color: #409eff;
 }
 
-.article-filter {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 14px;
-  flex-wrap: wrap;
-}
-
-.status-filter-btn {
-  padding: 8px 14px;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  background: #fff;
-  color: #606266;
-  cursor: pointer;
-}
-
-.status-filter-btn:hover,
-.status-filter-btn.active {
-  border-color: #409eff;
-  color: #409eff;
-  background: #ecf5ff;
-}
-
-.empty-state {
-  padding: 36px 0;
-  text-align: center;
-  color: #999;
-}
-
 .article-item {
   padding: 20px;
   border-bottom: 1px solid #eee;
@@ -1054,24 +965,6 @@ watch(activeTab, (newTab) => {
   gap: 15px;
   font-size: 14px;
   color: #999;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.status-badge {
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.status-badge.published {
-  background: #f0f9eb;
-  color: #67c23a;
-}
-
-.status-badge.draft {
-  background: #fdf6ec;
-  color: #e6a23c;
 }
 
 .users-list {
@@ -1247,124 +1140,6 @@ watch(activeTab, (newTab) => {
   border: 1px solid #ddd;
   border-radius: 4px;
   cursor: pointer;
-}
-
-.profile-container {
-  padding: 42px 0 56px;
-}
-
-.loading,
-.empty-state {
-  color: var(--color-muted);
-}
-
-.profile {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 24px;
-  box-shadow: var(--shadow-card);
-}
-
-.profile-header,
-.tabs,
-.article-item {
-  border-color: var(--color-border);
-}
-
-.user-info h2,
-.article-title,
-.user-details h4,
-.modal-content h3,
-.form-group label {
-  color: var(--color-text);
-}
-
-.email,
-.signature,
-.tab,
-.article-meta,
-.user-details p {
-  color: var(--color-muted);
-}
-
-.edit-btn,
-.follow-btn,
-.edit-article-btn,
-.submit-btn,
-.upload-avatar-btn {
-  background: var(--color-primary);
-  border-radius: 999px;
-}
-
-.password-btn,
-.delete-article-btn,
-.unfollow-btn,
-.cancel-btn,
-.status-filter-btn {
-  border-radius: 999px;
-}
-
-.tab.active,
-.article-title:hover,
-.user-details h4:hover {
-  color: var(--color-primary);
-}
-
-.tab.active {
-  border-bottom-color: var(--color-primary);
-}
-
-.status-filter-btn {
-  border-color: var(--color-border);
-  background: var(--color-surface-soft);
-  color: var(--color-muted);
-}
-
-.status-filter-btn:hover,
-.status-filter-btn.active {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
-}
-
-.article-item {
-  border-radius: 16px;
-  transition: background 0.2s ease;
-}
-
-.article-item:hover,
-.user-item {
-  background: var(--color-surface-soft);
-}
-
-.user-item {
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-}
-
-.user-item:hover {
-  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface-soft));
-}
-
-.modal-content {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 18px;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  border-color: var(--color-border);
-  background: var(--color-surface-soft);
-  color: var(--color-text);
-  border-radius: 10px;
-}
-
-.cancel-btn {
-  background: var(--color-surface-soft);
-  color: var(--color-text);
-  border-color: var(--color-border);
 }
 </style>
 
