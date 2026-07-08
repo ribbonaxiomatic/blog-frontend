@@ -365,6 +365,7 @@ const sendQuestion = async () => {
     toolResult: null,
   }
   messages.value.push(assistantMessage)
+  const reactiveMessage = messages.value[messages.value.length - 1]
   streaming.value = true
   activeController.value = new AbortController()
   scrollToBottom()
@@ -375,13 +376,13 @@ const sendQuestion = async () => {
       sessionId: activeSessionId,
       signal: activeController.value.signal,
       onEvent: (event) => {
-        handleChatEvent(event, assistantMessage)
+        handleChatEvent(event, reactiveMessage)
       },
     })
     await loadHistory()
   } catch (error) {
     if (error.name !== 'AbortError') {
-      assistantMessage.content += '\nAI 助手暂时连接失败，请稍后再试。'
+      reactiveMessage.content += '\nAI 助手暂时连接失败，请稍后再试。'
     }
   } finally {
     streaming.value = false
