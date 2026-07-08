@@ -43,18 +43,11 @@ export const deleteArticles = (ids) => {
   })
 }
 
-// 同步已发布文章到向量库
-export const syncArticleVectors = () => {
+// 发布文章（将 status 改为 1）
+export const publishArticle = (articleId) => {
   return request({
-    url: '/articles/sync-vectors',
-    method: 'post',
-  })
-}
-
-// 查询文章向量库状态
-export const getArticleVectorStatus = () => {
-  return request({
-    url: '/articles/vector-status',
-    method: 'get',
+    url: '/articles',
+    method: 'put',
+    data: { articleId, status: 1 },
   })
 }
