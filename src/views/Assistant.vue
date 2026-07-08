@@ -1212,6 +1212,209 @@ onMounted(async () => {
   }
 }
 
+/* Unified visual system overrides */
+.session-panel,
+.chat-panel,
+.draft-dialog {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+}
+
+.panel-header,
+.chat-header,
+.composer,
+.draft-dialog-header {
+  background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+  border-color: var(--color-border);
+}
+
+.panel-header h2,
+.chat-header h1,
+.welcome h2,
+.draft-dialog-header h2,
+.draft-form label,
+.article-result strong,
+.examples strong {
+  color: var(--color-text);
+}
+
+.panel-header p,
+.chat-header p,
+.welcome p,
+.panel-state,
+.empty-state,
+.history-group h3,
+.history-item small,
+.tool-narration,
+.article-result p,
+.examples span,
+.draft-dialog-header p,
+.draft-state {
+  color: var(--color-muted);
+}
+
+.history-entry {
+  color: var(--color-text);
+}
+
+.history-entry:hover,
+.history-entry.active {
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
+}
+
+.history-delete {
+  color: var(--color-muted);
+}
+
+.history-delete:hover {
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  color: var(--color-danger);
+}
+
+.icon-btn {
+  background: var(--color-surface-soft);
+  color: var(--color-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.icon-btn:hover {
+  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
+  transform: translateY(-1px);
+}
+
+.icon-btn.primary,
+.send-btn {
+  background: var(--gradient-primary);
+  color: #fff;
+  border: none;
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--color-primary) 22%, transparent);
+}
+
+.status-pill,
+.secondary-btn {
+  background: var(--color-surface-soft);
+  color: var(--color-muted);
+  border: 1px solid var(--color-border);
+}
+
+.status-dot {
+  background: var(--color-muted);
+}
+
+.status-dot.active {
+  background: var(--color-success);
+}
+
+.message-list {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 4%, transparent), transparent 240px),
+    var(--color-surface-soft);
+}
+
+.message-bubble {
+  border-radius: 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.message-row.user .message-bubble {
+  background: var(--gradient-primary);
+  color: #fff;
+}
+
+.message-row.assistant .message-bubble,
+.typing-row {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.message-markdown :deep(a),
+.link-btn {
+  color: var(--color-primary);
+}
+
+.message-markdown :deep(code) {
+  background: var(--color-surface-soft);
+  color: var(--color-danger);
+}
+
+.message-markdown :deep(pre) {
+  background: #111827;
+}
+
+.tool-card,
+.article-result,
+.examples button {
+  background: var(--color-surface-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.tool-card {
+  padding: 12px;
+}
+
+.tool-title {
+  color: var(--color-text);
+}
+
+.link-btn {
+  background: var(--color-surface);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
+  border-radius: 999px;
+}
+
+.article-result:hover,
+.examples button:hover {
+  background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-border));
+  transform: translateY(-1px);
+}
+
+.article-result span {
+  background: color-mix(in srgb, var(--color-success) 14%, transparent);
+  color: var(--color-success);
+}
+
+.typing-row span {
+  background: var(--color-muted);
+}
+
+.composer textarea,
+.draft-form input,
+.draft-form textarea {
+  background: var(--color-surface-soft);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+}
+
+.composer textarea:focus,
+.draft-form input:focus,
+.draft-form textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.draft-dialog-backdrop {
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(8px);
+}
+
+.draft-error {
+  color: var(--color-danger);
+}
+
+.draft-actions {
+  background: color-mix(in srgb, var(--color-surface) 95%, transparent);
+  border-top: 1px solid var(--color-border);
+}
+
 @media (max-width: 900px) {
   .assistant-page {
     height: auto;

@@ -423,16 +423,6 @@ onMounted(() => {
   position: relative;
 }
 
-.hero::after {
-  content: '';
-  position: absolute;
-  inset: auto -80px -160px auto;
-  width: 360px;
-  height: 360px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-}
-
 .hero-content,
 .hero-panel {
   position: relative;
